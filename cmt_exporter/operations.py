@@ -114,8 +114,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     absPath = getAbsPathByImage(bpy.data.materials[mat.FileName],tex.value)
                     if data.TextureCompressionRate != "1":
                        p = Path(absPath)
-                       absPath = compress_texture_resolution(absPath,scale=data.TextureCompressionRate,
-                                                             output_path = str(p.with_stem(p.stem + "_Scale" + data.TextureCompressionRate)))
+                       absPath = compress_texture_resolution(absPath,scale=data.TextureCompressionRate)
                        texName = str(Path(absPath).stem)
                        deleteList.append(absPath)
                     if absPath and  data.TexEmbededExportScript != None:
@@ -147,12 +146,12 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     materialList[mat.FileName][tex.text] = texName
 
         tempDict = dict(materialList)
-        #补齐未包含的属性
+        #补齐未包含的属性,包含非贴图项
         for key, mat in tempDict.items():
             tC = [ x for x in data.MaterialList if x.FileName == key][0].Class
             for propName, v in g_Mat_json[tC].items():
                 if propName not in mat:
-                   materialList[key][propName] = ""
+                   materialList[key][propName] = v if "AssetObjects.." in v else ""
         
         classList = Dictionary[str, str]()
         for key, mat in materialList.items():

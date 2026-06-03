@@ -1,0 +1,25 @@
+{
+    "Classes":[
+        "Unit",
+        "Leader"
+    ],
+    "Unit":[
+        "potential_any_graph",
+        "Standard_Biped",
+        "Standard_Broadside",
+        "Standard_CannonBlast",
+        "Standard_Dog",
+        "Standard_GunMuzzleFlash",
+        "Standard_Naval",
+        "Standard_NonCombat",
+        "Standard_NonCombatNaval",
+        "Standard_SwordTrail"
+    ],
+    "Leader":[
+        "Standard_Leader",
+        "Standard_Leader_No_Unhappy_Blend",
+        "Standard_LeaderBackground"
+    ]
+        
+    
+}

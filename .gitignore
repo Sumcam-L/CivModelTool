@@ -1,0 +1,5 @@
+cmt_exporter/dependencies/Firaxis.Granny.Impl.dll.i64
+__pycache__/
+*.pyc
+*.pdb
+*.ida

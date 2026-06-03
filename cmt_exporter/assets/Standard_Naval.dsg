@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<AssetObjects..DSGInstance>
+	<m_CookParams>
+		<m_Values/>
+	</m_CookParams>
+	<m_Version>
+		<major>1</major>
+		<minor>0</minor>
+		<build>0</build>
+		<revision>0</revision>
+	</m_Version>
+	<m_AnimationSlots>
+		<Element text="RUN_A"/>
+		<Element text="FORWARD_A"/>
+		<Element text="BACKWARD_A"/>
+		<Element text="IDLE_A"/>
+		<Element text="ATTACK_A"/>
+		<Element text="REACT_A"/>
+		<Element text="DEATH_1"/>
+		<Element text="DEATH_A"/>
+		<Element text="DODGE_A"/>
+		<Element text="HERO_A"/>
+		<Element text="SPAWN"/>
+		<Element text="DEATH_2"/>
+		<Element text="DEATH_3"/>
+		<Element text="IDLE_COMBAT_A"/>
+		<Element text="DEFEND_A"/>
+		<Element text="DEATH_4"/>
+		<Element text="DEATH_5"/>
+		<Element text="DEATH_6"/>
+		<Element text="TURN_R"/>
+		<Element text="TURN_L"/>
+		<Element text="DEATH_7"/>
+		<Element text="DEATH_8"/>
+		<Element text="DEATH_10"/>
+		<Element text="DEATH_11"/>
+		<Element text="DEATH_12"/>
+		<Element text="DEATH_13"/>
+		<Element text="DEATH_14"/>
+		<Element text="DEATH_9"/>
+		<Element text="ATTACK_P"/>
+		<Element text="DEFEND_P"/>
+		<Element text="HERO_LEFT"/>
+		<Element text="RUN_COMBAT"/>
+		<Element text="REACT_RANGED"/>
+		<Element text="VICTORY"/>
+		<Element text="ATTACK_S"/>
+		<Element text="HERO_RIGHT"/>
+		<Element text="DEFEND_S"/>
+		<Element text="RUN_COMBAT_STOP"/>
+		<Element text="RUN_STOP"/>
+		<Element text="ATTACK_1"/>
+		<Element text="ATTACK_2"/>
+		<Element text="ATTACK_3"/>
+		<Element text="ATTACK_4"/>
+		<Element text="DEATH_15"/>
+		<Element text="DEATH_16"/>
+		<Element text="DEATH_17"/>
+		<Element text="DEATH_18"/>
+		<Element text="DEATH_19"/>
+		<Element text="DEATH_20"/>
+	</m_AnimationSlots>
+	<m_TimelineSlots>
+		<Element text="RUN_A"/>
+		<Element text="PERSISTENT"/>
+		<Element text="FORWARD_A"/>
+		<Element text="BACKWARD_A"/>
+		<Element text="IDLE_A"/>
+		<Element text="ATTACK_A"/>
+		<Element text="REACT_A"/>
+		<Element text="DEATH_1"/>
+		<Element text="DEATH_A"/>
+		<Element text="DODGE_A"/>
+		<Element text="HERO_A"/>
+		<Element text="SPAWN"/>
+		<Element text="DEATH_2"/>
+		<Element text="DEATH_3"/>
+		<Element text="IDLE_COMBAT_A"/>
+		<Element text="DEFEND_A"/>
+		<Element text="DEATH_4"/>
+		<Element text="DEATH_5"/>
+		<Element text="DEATH_6"/>
+		<Element text="TURN_R"/>
+		<Element text="TURN_L"/>
+		<Element text="DEATH_7"/>
+		<Element text="DEATH_8"/>
+		<Element text="DEATH_10"/>
+		<Element text="DEATH_11"/>
+		<Element text="DEATH_12"/>
+		<Element text="DEATH_13"/>
+		<Element text="DEATH_14"/>
+		<Element text="DEATH_9"/>
+		<Element text="ATTACK_P"/>
+		<Element text="DEFEND_P"/>
+		<Element text="HERO_LEFT"/>
+		<Element text="RUN_COMBAT"/>
+		<Element text="REACT_RANGED"/>
+		<Element text="VICTORY"/>
+		<Element text="ATTACK_S"/>
+		<Element text="HERO_RIGHT"/>
+		<Element text="DEFEND_S"/>
+		<Element text="RUN_COMBAT_STOP"/>
+		<Element text="RUN_STOP"/>
+		<Element text="ATTACK_1"/>
+		<Element text="ATTACK_2"/>
+		<Element text="ATTACK_3"/>
+		<Element text="ATTACK_4"/>
+		<Element text="DEATH_15"/>
+		<Element text="DEATH_16"/>
+		<Element text="DEATH_17"/>
+		<Element text="DEATH_18"/>
+		<Element text="DEATH_19"/>
+		<Element text="DEATH_20"/>
+	</m_TimelineSlots>
+	<m_ClassName text="Unit"/>
+	<m_DataFiles>
+		<Element>
+			<m_ID text="DSG"/>
+			<m_RelativePath text="Standard_Naval.dsgxml"/>
+		</Element>
+	</m_DataFiles>
+	<m_Name text="Standard_Naval"/>
+	<m_Description text=""/>
+	<m_Tags>
+		<Element text="Unit"/>
+	</m_Tags>
+	<m_Groups/>
+</AssetObjects..DSGInstance>
+

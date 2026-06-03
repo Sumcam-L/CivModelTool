@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<AssetObjects..DSGInstance>
+	<m_CookParams>
+		<m_Values/>
+	</m_CookParams>
+	<m_Version>
+		<major>1</major>
+		<minor>0</minor>
+		<build>0</build>
+		<revision>0</revision>
+	</m_Version>
+	<m_AnimationSlots>
+		<Element text="ENTER_ROOM"/>
+		<Element text="IDLE"/>
+	</m_AnimationSlots>
+	<m_TimelineSlots>
+		<Element text="ENTER_ROOM"/>
+		<Element text="IDLE"/>
+	</m_TimelineSlots>
+	<m_ClassName text="LeaderDSG"/>
+	<m_DataFiles>
+		<Element>
+			<m_ID text="DSG"/>
+			<m_RelativePath text="Standard_LeaderBackground.dsgxml"/>
+		</Element>
+	</m_DataFiles>
+	<m_Name text="Standard_LeaderBackground"/>
+	<m_Description text=""/>
+	<m_Tags>
+		<Element text="LeaderDSG"/>
+	</m_Tags>
+	<m_Groups/>
+</AssetObjects..DSGInstance>
+

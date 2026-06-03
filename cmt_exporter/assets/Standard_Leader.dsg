@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<AssetObjects..DSGInstance>
+	<m_CookParams>
+		<m_Values/>
+	</m_CookParams>
+	<m_Version>
+		<major>1</major>
+		<minor>0</minor>
+		<build>0</build>
+		<revision>0</revision>
+	</m_Version>
+	<m_AnimationSlots>
+		<Element text="NEUTRAL_IDLE_A"/>
+		<Element text="HAPPY_IDLE_A"/>
+		<Element text="UNHAPPY_IDLE_A"/>
+		<Element text="NEUTRAL_POSITIVE_A"/>
+		<Element text="NEUTRAL_POSITIVE_B"/>
+		<Element text="NEUTRAL_NEGATIVE_A"/>
+		<Element text="NEUTRAL_NEGATIVE_B"/>
+		<Element text="HAPPY_POSITIVE_A"/>
+		<Element text="HAPPY_POSITIVE_B"/>
+		<Element text="HAPPY_NEGATIVE_A"/>
+		<Element text="HAPPY_NEGATIVE_B"/>
+		<Element text="UNHAPPY_POSITIVE_A"/>
+		<Element text="UNHAPPY_POSITIVE_B"/>
+		<Element text="UNHAPPY_NEGATIVE_A"/>
+		<Element text="UNHAPPY_NEGATIVE_B"/>
+		<Element text="DECLARE_WAR_A"/>
+		<Element text="01_FIRST_MEET"/>
+		<Element text="02_DECLARE_WAR_FROM_HUMAN"/>
+		<Element text="03_DECLARE_WAR_FROM_AI"/>
+		<Element text="04_KUDOS"/>
+		<Element text="05_WARNING"/>
+		<Element text="06_DEFEAT"/>
+		<Element text="NEUTRAL_TO_HAPPY"/>
+		<Element text="NEUTRAL_TO_UNHAPPY"/>
+		<Element text="NEUTRAL_TO_ENRAGED"/>
+		<Element text="HAPPY_TO_NEUTRAL"/>
+		<Element text="HAPPY_TO_ENRAGED"/>
+		<Element text="UNHAPPY_TO_NEUTRAL"/>
+		<Element text="UNHAPPY_TO_ENRAGED"/>
+	</m_AnimationSlots>
+	<m_TimelineSlots>
+		<Element text="NEUTRAL_IDLE_A"/>
+		<Element text="HAPPY_IDLE_A"/>
+		<Element text="UNHAPPY_IDLE_A"/>
+		<Element text="NEUTRAL_POSITIVE_A"/>
+		<Element text="NEUTRAL_POSITIVE_B"/>
+		<Element text="NEUTRAL_NEGATIVE_A"/>
+		<Element text="NEUTRAL_NEGATIVE_B"/>
+		<Element text="HAPPY_POSITIVE_A"/>
+		<Element text="HAPPY_POSITIVE_B"/>
+		<Element text="HAPPY_NEGATIVE_A"/>
+		<Element text="HAPPY_NEGATIVE_B"/>
+		<Element text="UNHAPPY_POSITIVE_A"/>
+		<Element text="UNHAPPY_POSITIVE_B"/>
+		<Element text="UNHAPPY_NEGATIVE_A"/>
+		<Element text="UNHAPPY_NEGATIVE_B"/>
+		<Element text="DECLARE_WAR_A"/>
+		<Element text="01_FIRST_MEET"/>
+		<Element text="02_DECLARE_WAR_FROM_HUMAN"/>
+		<Element text="03_DECLARE_WAR_FROM_AI"/>
+		<Element text="04_KUDOS"/>
+		<Element text="05_WARNING"/>
+		<Element text="06_DEFEAT"/>
+		<Element text="NEUTRAL_TO_HAPPY"/>
+		<Element text="NEUTRAL_TO_UNHAPPY"/>
+		<Element text="NEUTRAL_TO_ENRAGED"/>
+		<Element text="HAPPY_TO_NEUTRAL"/>
+		<Element text="HAPPY_TO_ENRAGED"/>
+		<Element text="UNHAPPY_TO_NEUTRAL"/>
+		<Element text="UNHAPPY_TO_ENRAGED"/>
+	</m_TimelineSlots>
+	<m_ClassName text="LeaderDSG"/>
+	<m_DataFiles>
+		<Element>
+			<m_ID text="DSG"/>
+			<m_RelativePath text="Standard_Leader.dsgxml"/>
+		</Element>
+	</m_DataFiles>
+	<m_Name text="Standard_Leader"/>
+	<m_Description text=""/>
+	<m_Tags>
+		<Element text="Unit"/>
+		<Element text="LeaderDSG"/>
+	</m_Tags>
+	<m_Groups/>
+</AssetObjects..DSGInstance>
+

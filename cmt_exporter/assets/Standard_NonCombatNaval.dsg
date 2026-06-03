@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<AssetObjects..DSGInstance>
+	<m_CookParams>
+		<m_Values/>
+	</m_CookParams>
+	<m_Version>
+		<major>1</major>
+		<minor>0</minor>
+		<build>0</build>
+		<revision>0</revision>
+	</m_Version>
+	<m_AnimationSlots>
+		<Element text="RUN_A"/>
+		<Element text="FORWARD_A"/>
+		<Element text="BACKWARD_A"/>
+		<Element text="BREATHING_A"/>
+		<Element text="IDLE_A"/>
+		<Element text="IDLE_B"/>
+		<Element text="IDLE_D"/>
+		<Element text="IDLE_C"/>
+		<Element text="ACTION_A"/>
+		<Element text="DEATH_1"/>
+		<Element text="DEATH_A"/>
+		<Element text="DEATH_2"/>
+		<Element text="DEATH_3"/>
+		<Element text="DEATH_4"/>
+		<Element text="DEATH_5"/>
+		<Element text="DEATH_6"/>
+		<Element text="TURN_R"/>
+		<Element text="TURN_L"/>
+		<Element text="DEATH_7"/>
+		<Element text="DEATH_8"/>
+		<Element text="DEATH_10"/>
+		<Element text="DEATH_11"/>
+		<Element text="DEATH_12"/>
+		<Element text="DEATH_13"/>
+		<Element text="DEATH_14"/>
+		<Element text="DEATH_9"/>
+		<Element text="ACTION_1"/>
+		<Element text="DEATH_15"/>
+		<Element text="DEATH_16"/>
+		<Element text="DEATH_17"/>
+		<Element text="DEATH_18"/>
+		<Element text="DEATH_19"/>
+		<Element text="DEATH_20"/>
+		<Element text="RUN_STOP"/>
+		<Element text="RUN_STOP_B"/>
+		<Element text="RUN_STOP_D"/>
+		<Element text="RUN_STOP_C"/>
+		<Element text="RUN_START"/>
+		<Element text="ACTION_2"/>
+		<Element text="ACTION_3"/>
+		<Element text="ACTION_4"/>
+		<Element text="REACT_RANGED"/>
+		<Element text="ATTACK_1"/>
+	</m_AnimationSlots>
+	<m_TimelineSlots>
+		<Element text="RUN_A"/>
+		<Element text="PERSISTENT"/>
+		<Element text="FORWARD_A"/>
+		<Element text="BACKWARD_A"/>
+		<Element text="IDLE_A"/>
+		<Element text="IDLE_B"/>
+		<Element text="IDLE_D"/>
+		<Element text="IDLE_C"/>
+		<Element text="ACTION_A"/>
+		<Element text="DEATH_1"/>
+		<Element text="DEATH_A"/>
+		<Element text="DEATH_2"/>
+		<Element text="DEATH_3"/>
+		<Element text="DEATH_4"/>
+		<Element text="DEATH_5"/>
+		<Element text="DEATH_6"/>
+		<Element text="TURN_R"/>
+		<Element text="TURN_L"/>
+		<Element text="DEATH_7"/>
+		<Element text="DEATH_8"/>
+		<Element text="DEATH_10"/>
+		<Element text="DEATH_11"/>
+		<Element text="DEATH_12"/>
+		<Element text="DEATH_13"/>
+		<Element text="DEATH_14"/>
+		<Element text="DEATH_9"/>
+		<Element text="ACTION_1"/>
+		<Element text="DEATH_15"/>
+		<Element text="DEATH_16"/>
+		<Element text="DEATH_17"/>
+		<Element text="DEATH_18"/>
+		<Element text="DEATH_19"/>
+		<Element text="DEATH_20"/>
+		<Element text="RUN_STOP"/>
+		<Element text="RUN_START"/>
+		<Element text="ACTION_2"/>
+		<Element text="ACTION_3"/>
+		<Element text="ACTION_4"/>
+		<Element text="REACT_RANGED"/>
+		<Element text="ATTACK_1"/>
+	</m_TimelineSlots>
+	<m_ClassName text="Unit"/>
+	<m_DataFiles>
+		<Element>
+			<m_ID text="DSG"/>
+			<m_RelativePath text="Standard_NonCombatNaval.dsgxml"/>
+		</Element>
+	</m_DataFiles>
+	<m_Name text="Standard_NonCombatNaval"/>
+	<m_Description text=""/>
+	<m_Tags>
+		<Element text="Unit"/>
+	</m_Tags>
+</AssetObjects..DSGInstance>
+

@@ -1,0 +1,273 @@
+{
+    "Leader_Skin": {
+        "BlurWidth": "Leader_BlurWidth",
+        "Normal": "Leader_Normal",
+        "BaseColor": "Leader_BaseColor",
+        "Metalness": "Leader_Metalness",
+        "AO": "Leader_AO",
+        "Gloss": "Leader_Gloss",
+        "Fuzz": "Leader_Fuzz",
+        "Translucency": "Leader_Translucency",
+        "TranslucencyColor": "AssetObjects..RGBParameter"
+    },
+    "Leader": {
+        "Opacity": "Leader_OPAC",
+        "Normal": "Leader_Normal",
+        "SpecTint": "Leader_Tint",
+        "Metalness": "Leader_Metalness",
+        "BaseColor": "Leader_BaseColor",
+        "AO": "Leader_AO",
+        "Anisotropy": "Leader_Anisotropy",
+        "Tangent": "Leader_Tangent",
+        "Fuzz": "Leader_Fuzz",
+        "FuzzTint": "Leader_Tint",
+        "Gloss": "Leader_Gloss",
+        "Translucency": "Leader_Translucency",
+        "TranslucencyColor": "AssetObjects..RGBParameter",
+        "ForceTransparency": "AssetObjects..BoolParameter"
+    },
+    "Unit": {
+        "BaseColor": "Generic_BaseColor",
+        "Normal": "Generic_Normal",
+        "AO": "Generic_AO",
+        "Seperate_AO_UV": "AssetObjects..BoolParameter",
+        "Metalness": "Generic_Metalness",
+        "TintMask": "Generic_TintMask",
+        "Gloss": "Generic_Gloss",
+        "Translucency": "AssetObjects..BoolParameter",
+        "Emissive": "Generic_Emissive",
+        "Emissive_Minimum_Weight": "AssetObjects..FloatParameter",
+        "UV_ScrollRate": "AssetObjects..Coord2DParameter"
+    },
+    "Landmark": {
+        "BaseColor": "Generic_BaseColor",
+        "Normal": "Generic_Normal",
+        "AO": "Generic_AO",
+        "Metalness": "Generic_Metalness",
+        "Opacity": "Generic_OPAC",
+        "Gloss": "Generic_Gloss",
+        "LightMap": "Generic_LightMap",
+        "Emissive": "Generic_Emissive",
+        "TintMask": "Generic_TintMask",
+        "UV_ScrollRate": "AssetObjects..Coord2DParameter",
+        "LightMap_Minimum_Weight": "AssetObjects..FloatParameter",
+        "Emissive_Minimum_Weight": "AssetObjects..FloatParameter"
+    },
+    "Leader_Cloth": {
+        "Normal": "Leader_Normal",
+        "SpecTint": "Leader_Tint",
+        "BaseColor": "Leader_BaseColor",
+        "AO": "Leader_AO",
+        "Fuzz": "Leader_Fuzz",
+        "FuzzTint": "Leader_Tint",
+        "Gloss": "Leader_Gloss",
+        "Translucency": "Leader_Translucency",
+        "TranslucencyColor": "AssetObjects..RGBParameter",
+        "ForceTransparency": "AssetObjects..BoolParameter"
+    },
+    "Leader_Glass": {
+        "Normal": "Leader_Normal",
+        "AO": "Leader_AO",
+        "Gloss": "Leader_Gloss",
+        "Opacity": "Leader_OPAC"
+    },
+    "Leader_Hair": {
+        "Thickness": "AssetObjects..FloatParameter",
+        "Color": "AssetObjects..RGBParameter",
+        "Color_Secondary": "AssetObjects..RGBParameter",
+        "Color_Accent": "AssetObjects..RGBParameter",
+        "Color_AccentSecondary": "AssetObjects..RGBParameter",
+        "AccentMix": "AssetObjects..FloatParameter",
+        "GlossPower": "AssetObjects..FloatParameter",
+        "ClumpWidth": "AssetObjects..FloatParameter",
+        "ClumpCount": "AssetObjects..IntParameter",
+        "ClumpProfile_0": "AssetObjects..FloatParameter",
+        "ClumpProfile_1": "AssetObjects..FloatParameter",
+        "ClumpProfile_2": "AssetObjects..FloatParameter",
+        "ClumpProfile_3": "AssetObjects..FloatParameter",
+        "ClumpProfile_4": "AssetObjects..FloatParameter",
+        "ClumpProfile_5": "AssetObjects..FloatParameter",
+        "ClumpProfile_6": "AssetObjects..FloatParameter",
+        "ClumpProfile_7": "AssetObjects..FloatParameter",
+        "Transparent": "AssetObjects..BoolParameter",
+        "TaperStart": "AssetObjects..FloatParameter",
+        "DiffuseMix": "AssetObjects..FloatParameter",
+        "TaperStartThickness": "AssetObjects..FloatParameter",
+        "ClumpProfile": "AssetObjects..CurveParameter",
+        "ExperimentalClumpProfile": "AssetObjects..BoolParameter"
+    },
+    "TerrainMaterial": {
+        "BaseColor": "Terrain_BaseColor",
+        "Heightmap": "Terrain_Heightmap",
+        "Spec": "Terrain_Spec",
+        "FOWColor": "Terrain_FOWColor",
+        "BlendLevel": "AssetObjects..IntParameter",
+        "ColorIdentifier": "AssetObjects..RGBParameter",
+        "AlphaIdentifier": "AssetObjects..FloatParameter",
+        "Priority": "AssetObjects..IntParameter"
+    },
+    "DecalMaterial": {
+        "BaseColor": "Decal_BaseColor",
+        "Heightmap": "Decal_Heightmap",
+        "Spec": "Decal_Spec",
+        "FOWColor": "Decal_FOWColor",
+        "FOWSprite": "FOWSprite"
+    },
+    "FOWLineDrawing": {
+        "NoWings": "AssetObjects..BoolParameter",
+        "NoFins": "AssetObjects..BoolParameter"
+    },
+    "Water": {
+        "Bumps": "Terrain_Heightmap",
+        "BumpScale": "AssetObjects..FloatParameter",
+        "ScatteringMap": "WaterDensityMap",
+        "WhiteCaps": "AssetObjects..BoolParameter",
+        "ScatteringMultiplier": "AssetObjects..FloatParameter",
+        "BumpTileRate": "AssetObjects..FloatParameter",
+        "Scroll0": "AssetObjects..FloatParameter",
+        "Scroll1": "AssetObjects..FloatParameter",
+        "Scroll1Speed": "AssetObjects..FloatParameter",
+        "Bumps2": "Terrain_Heightmap",
+        "Scroll0Speed": "AssetObjects..FloatParameter",
+        "DensityDepthRange": "AssetObjects..FloatParameter",
+        "MipSupportScale": "AssetObjects..FloatParameter",
+        "SobelBlurSupportScale": "AssetObjects..FloatParameter",
+        "DensityMap": "WaterDensityMap",
+        "DensityMultiplier": "AssetObjects..FloatParameter",
+        "WhiteCapOpacity": "AssetObjects..FloatParameter",
+        "FallbackDepthRange": "AssetObjects..BoolParameter"
+    },
+    "VFXModel": {
+        "BaseColor": "Generic_BaseColor",
+        "Normal": "Generic_Normal",
+        "AO": "Generic_AO",
+        "Separate_AO_UV": "AssetObjects..BoolParameter",
+        "Metalness": "Generic_Metalness",
+        "TintMask": "Generic_TintMask",
+        "Gloss": "Generic_Gloss",
+        "Opacity": "Generic_OPAC"
+    },
+    "RiverWater": {
+        "Bumps": "Terrain_Heightmap",
+        "BumpScale": "AssetObjects..FloatParameter",
+        "SobelBlurSupportScale": "AssetObjects..FloatParameter",
+        "MipSupportScale": "AssetObjects..FloatParameter",
+        "ScatteringMap": "WaterDensityMap",
+        "ScrollSpeed": "AssetObjects..FloatParameter",
+        "DensityMap": "WaterDensityMap",
+        "DensityDepthRange": "AssetObjects..FloatParameter",
+        "ScatteringMultiplier": "AssetObjects..FloatParameter",
+        "DensityMultiplier": "AssetObjects..FloatParameter"
+    },
+    "TerrainElement": {
+        "Heightmap": "TerrainElementHeightmap",
+        "BlockingHex1": "AssetObjects..BoolParameter",
+        "BlockingHex2": "AssetObjects..BoolParameter",
+        "BlockingHex3": "AssetObjects..BoolParameter",
+        "BlockingHex4": "AssetObjects..BoolParameter",
+        "BlockingHex5": "AssetObjects..BoolParameter",
+        "BlockingHex6": "AssetObjects..BoolParameter",
+        "IDMap": "TerrainElementIDMap",
+        "BlendMap": "TerrainElementBlendmap",
+        "Noise2D": "TerrainElementNoise2D"
+    },
+    "BurnMaterial": {
+        "BurnMap": "Generic_BurnMap",
+        "GradientScale": "AssetObjects..FloatParameter",
+        "Octaves": "AssetObjects..IntParameter",
+        "NoiseScale": "AssetObjects..FloatParameter",
+        "NoiseFrequency": "AssetObjects..FloatParameter",
+        "BurnGloss": "Generic_Gloss",
+        "BurnMetalness": "Generic_Metalness",
+        "BurnGlossBlendFactor": "AssetObjects..FloatParameter",
+        "BurnMetalnessBlendFactor": "AssetObjects..FloatParameter"
+    },
+    "UILensMaterial": {
+        "UILensOverlayTexture": "Generic_BaseColor",
+        "TransitionLensTexture": "Generic_BaseColor"
+    },
+    "WaveMaterial": {
+        "CrestPagesU": "AssetObjects..IntParameter",
+        "CrestPagesV": "AssetObjects..IntParameter",
+        "CrestPagesInUse": "AssetObjects..IntParameter",
+        "CrestAtlas": "Generic_BaseColor",
+        "AuxTexture": "Generic_BaseColor"
+    },
+    "VFXModel_FX": {
+        "Layer0": "VFXParticle_BaseColor",
+        "Layer1": "VFXParticle_BaseColor",
+        "Layer0_UV_Clamp": "AssetObjects..BoolParameter",
+        "Layer1_UV_Clamp": "AssetObjects..BoolParameter",
+        "Layer1_UV_Offset": "AssetObjects..Coord2DParameter",
+        "Layer0_UV_Offset": "AssetObjects..Coord2DParameter",
+        "Layer1_UV_ScrollRate": "AssetObjects..Coord2DParameter",
+        "Layer0_UV_ScrollRate": "AssetObjects..Coord2DParameter",
+        "AlphaMode": "AssetObjects..EnumParameter",
+        "AlphaOperation": "AssetObjects..EnumParameter",
+        "Layer0_UV_Offset_Alpha": "AssetObjects..Coord2DParameter",
+        "Layer1_UV_Offset_Alpha": "AssetObjects..Coord2DParameter",
+        "Layer0_UV_ScrollRate_Alpha": "AssetObjects..Coord2DParameter",
+        "Layer1_UV_ScrollRate_Alpha": "AssetObjects..Coord2DParameter",
+        "Layer0_UV_OffsetRadius": "AssetObjects..FloatParameter",
+        "Layer1_UV_OffsetRadius": "AssetObjects..FloatParameter",
+        "TransparentAngle": "AssetObjects..FloatParameter",
+        "OpaqueAngle": "AssetObjects..FloatParameter",
+        "Layer0_LifetimeRamp": "VFXParticle_Ramp",
+        "Layer1_LifetimeRamp": "VFXParticle_Ramp",
+        "Layer0_ScrollingMask": "VFXParticle_Mask",
+        "Layer1_ScrollingMask": "VFXParticle_Mask",
+        "Layer0_StationaryMask": "VFXParticle_Mask",
+        "Layer1_StationaryMask": "VFXParticle_Mask",
+        "Layer0_ColorMode": "AssetObjects..EnumParameter",
+        "Layer1_ColorMode": "AssetObjects..EnumParameter",
+        "Layer0_Lighting": "AssetObjects..FloatParameter",
+        "Layer1_Lighting": "AssetObjects..FloatParameter",
+        "IgnoreCameraExposure": "AssetObjects..BoolParameter",
+        "Layer0_Multiplier": "AssetObjects..FloatParameter",
+        "Layer1_Multiplier": "AssetObjects..FloatParameter"
+    },
+    "Leader_Matte": {
+        "BaseColor": "Leader_BaseColor",
+        "Opacity": "Leader_OPAC"
+    },
+    "TerrainEditMaterial": {
+        "HeightTexture": "Terrain_EditHeightmap",
+        "MinHeight": "AssetObjects..FloatParameter",
+        "MaxHeight": "AssetObjects..FloatParameter",
+        "UseRelativeHeight": "AssetObjects..BoolParameter"
+    },
+    "FireFX_Unlit": {
+        "BlendMode": "AssetObjects..EnumParameter",
+        "BaseColor": "FireFX_Opaque"
+    },
+    "FireFX_UnlitMasked": {
+        "BlendMode": "AssetObjects..EnumParameter",
+        "BaseColor": "FireFX_Opaque",
+        "Mask": "FireFX_Mask"
+    },
+    "FireFX_UnlitDistorted": {
+        "BlendMode": "AssetObjects..EnumParameter",
+        "BaseColor": "FireFX_Opaque",
+        "DistortionMap": "FireFX_DistortionMap"
+    },
+    "FireFX_Lit": {
+        "BaseColor": "FireFX_Opaque",
+        "NormalMap": "FireFX_NormalMap"
+    },
+    "FireFX_LitMasked": {
+        "BaseColor": "FireFX_Opaque",
+        "NormalMap": "FireFX_NormalMap",
+        "Mask": "FireFX_Mask"
+    },
+    "FireFX_LitDistorted": {
+        "BaseColor": "FireFX_Opaque",
+        "NormalMap": "FireFX_NormalMap",
+        "DistortionMap": "FireFX_DistortionMap"
+    },
+    "FireFX_AllMaps": {
+        "BaseColor": "FireFX_Opaque",
+        "NormalMap": "FireFX_NormalMap",
+        "DistortionMap": "FireFX_DistortionMap",
+        "Mask": "FireFX_Mask"
+    }
+}

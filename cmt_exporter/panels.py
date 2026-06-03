@@ -186,7 +186,7 @@ class CMT_Exporter_UL_AnimationList(bpy.types.UIList):
         # Note "data" names should never be translated!
         row = layout.row()
 
-        split = row.split(factor=0.1 )
+        split = row.split(factor=0.3 )
         split.label(text="   "+ str(index+1))
         split.prop(item,"value",text="")
         split.prop(item,"Class",text="")

@@ -114,7 +114,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     absPath = getAbsPathByImage(bpy.data.materials[mat.FileName],tex.value)
                     if data.TextureCompressionRate != "1":
                        p = Path(absPath)
-                       absPath = compress_texture_resolution(absPath,scale=data.TextureCompressionRate)
+                       absPath = compress_texture_resolution(absPath,scale=data.TextureCompressionRate,output_path=str(Path(projpath,p.name)))
                        texName = str(Path(absPath).stem)
                        deleteList.append(absPath)
                     if absPath and  data.TexEmbededExportScript != None:
@@ -128,15 +128,15 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                             deleteList.append(unpackedTexs["gloss"])
                             if mat.FileName not in materialList:
                                 materialList[mat.FileName] = Dictionary[str, str]()
-                            # if "Metalness" in g_Mat_json[tex.Class]:
-                            #     textureDict[unpackedTexs["metallic"]] = g_Mat_json[tex.Class]["Metalness"]
-                            #     materialList[mat.FileName]["Metalness"] = str(Path(unpackedTexs["metallic"]).stem)
-                            #     
+                            if "Metalness" in g_Mat_json[tex.Class]:
+                                textureDict[unpackedTexs["metallic"]] = g_Mat_json[tex.Class]["Metalness"]
+                                materialList[mat.FileName]["Metalness"] = str(Path(unpackedTexs["metallic"]).stem)
                                 
-                            # if "Gloss" in g_Mat_json[tex.Class]:
-                            #     textureDict[unpackedTexs["gloss"]] = g_Mat_json[tex.Class]["Gloss"]
-                            #     materialList[mat.FileName]["Gloss"] = str(Path(unpackedTexs["gloss"]).stem)
-                            #     
+                                
+                            if "Gloss" in g_Mat_json[tex.Class]:
+                                textureDict[unpackedTexs["gloss"]] = g_Mat_json[tex.Class]["Gloss"]
+                                materialList[mat.FileName]["Gloss"] = str(Path(unpackedTexs["gloss"]).stem)
+                                
                                 
                         
                     textureDict[absPath] = g_Mat_json[tex.Class][tex.text]
@@ -161,7 +161,8 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         CN6FileOps.exportMaterials(materialList,classList,projpath)
         ## 删除临时文件
         for file in deleteList:
-            os.remove(file)
+            print("删除临时文件",file)
+            # os.remove(file)
 
     def export_artdefs(self,context,data:CMT_Exporter_Settings):
         def fill_bins(self,parentnode,doc,bin,assetname):

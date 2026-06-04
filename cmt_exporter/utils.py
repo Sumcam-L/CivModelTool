@@ -425,83 +425,6 @@ def nearest_pow2(value):
     return max(1, p)
 
 
-def extract_packed_textures(image, base_name=None):
-    """
-    从打包贴图中提取所有贴图
-    打包格式: R=法线X, G=法线Y(反转), B=金属度, A=粗糙度
-    法线重建公式: Z = sqrt(1 - (R² + (1-G)²))
-
-    image: Blender Image对象或图片路径
-    base_name: 基础名称，默认为原图名称
-    返回: dict {"normal": Image, "metallic": Image, "gloss": Image}
-    """
-    if isinstance(image, str):
-        image = bpy.data.images.load(image)
-
-    if base_name is None:
-        base_name = image.name
-
-    width, height = image.size[0], image.size[1]
-    pixels = list(image.pixels)
-    
-    print(f"图片尺寸: {width}x{height}, 像素数: {len(pixels)}")
-    if len(pixels) > 0:
-        print(f"前4个像素值: {pixels[:4]}")
-
-    normal_pixels = [0.0] * (width * height * 4)
-    metallic_pixels = [0.0] * (width * height * 4)
-    roughness_pixels = [0.0] * (width * height * 4)
-
-    for i in range(width * height):
-        idx = i * 4
-        r = pixels[idx]
-        g = pixels[idx + 1]
-        b = pixels[idx + 2]
-        a = pixels[idx + 3]
-
-        nx = r * 2.0 - 1.0
-        ny = (1.0 - g) * 2.0 - 1.0
-        nz_sq = 1.0 - nx * nx - ny * ny
-        nz = math.sqrt(max(0.0, nz_sq))
-
-        normal_pixels[idx] = nx * 0.5 + 0.5
-        normal_pixels[idx + 1] = ny * 0.5 + 0.5
-        normal_pixels[idx + 2] = nz * 0.5 + 0.5
-        normal_pixels[idx + 3] = 1.0
-
-        metallic_pixels[idx] = b
-        metallic_pixels[idx + 1] = b
-        metallic_pixels[idx + 2] = b
-        metallic_pixels[idx + 3] = 1.0
-
-        gloss = 1.0 - a
-        roughness_pixels[idx] = gloss
-        roughness_pixels[idx + 1] = gloss
-        roughness_pixels[idx + 2] = gloss
-        roughness_pixels[idx + 3] = 1.0
-
-    normal_img = bpy.data.images.new(base_name + "_Normal", width=width, height=height, alpha=True)
-    normal_img.pixels = normal_pixels
-    normal_img.colorspace_settings.name = 'Non-Color'
-    normal_img.update()
-
-    metallic_img = bpy.data.images.new(base_name + "_Metallic", width=width, height=height, alpha=True)
-    metallic_img.pixels = metallic_pixels
-    metallic_img.colorspace_settings.name = 'Non-Color'
-    metallic_img.update()
-
-    gloss_img = bpy.data.images.new(base_name + "_Gloss", width=width, height=height, alpha=True)
-    gloss_img.pixels = roughness_pixels
-    gloss_img.colorspace_settings.name = 'Non-Color'
-    gloss_img.update()
-
-    print(f"输出前几个法线像素: {normal_pixels[:4]}")
-    print(f"输出前几个金属度像素: {metallic_pixels[:4]}")
-    print(f"输出前几个光泽度像素: {roughness_pixels[:4]}")
-
-    return {"normal": normal_img, "metallic": metallic_img, "gloss": gloss_img}
-
-
 def extract_packed_textures_to_file(input_path, output_dir=None):
     """
     从打包贴图文件提取所有贴图并保存
@@ -556,7 +479,7 @@ def extract_packed_textures_to_file(input_path, output_dir=None):
             out_pixels = [0.0] * (width * height * 4)
             for i in range(width * height):
                 idx = i * 4
-                gloss = 1.0 - pixels[idx+3]
+                gloss = 1 - pixels[idx+3]
                 out_pixels[idx] = gloss
                 out_pixels[idx+1] = gloss
                 out_pixels[idx+2] = gloss

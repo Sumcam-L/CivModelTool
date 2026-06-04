@@ -128,11 +128,12 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                             deleteList.append(unpackedTexs["gloss"])
                             if mat.FileName not in materialList:
                                 materialList[mat.FileName] = Dictionary[str, str]()
+                            ##金属度实际上似乎是粗糙度
                             if "Metalness" in g_Mat_json[tex.Class]:
                                 textureDict[unpackedTexs["metallic"]] = g_Mat_json[tex.Class]["Metalness"]
                                 materialList[mat.FileName]["Metalness"] = str(Path(unpackedTexs["metallic"]).stem)
                                 
-                                
+                            ##光泽是金属度
                             if "Gloss" in g_Mat_json[tex.Class]:
                                 textureDict[unpackedTexs["gloss"]] = g_Mat_json[tex.Class]["Gloss"]
                                 materialList[mat.FileName]["Gloss"] = str(Path(unpackedTexs["gloss"]).stem)
@@ -162,7 +163,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         ## 删除临时文件
         for file in deleteList:
             print("删除临时文件",file)
-            # os.remove(file)
+            os.remove(file)
 
     def export_artdefs(self,context,data:CMT_Exporter_Settings):
         def fill_bins(self,parentnode,doc,bin,assetname):

@@ -315,7 +315,7 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     TextureCompressionRate:bpy.props.EnumProperty(
         name="贴图压缩率",
         description="贴图压缩率",
-        items=[("1","1.0",""),("0.75","0.75",""),("0.5","0.5",""),("0.25","0.25",""),("0.1","0.1","")],
+        items=[("1","1.0",""),("0.75","0.75",""),("0.5","0.5",""),("0.25","0.25",""),("0.125","0.125",""),("0.1","0.1","")],
         default="1"
     )
     

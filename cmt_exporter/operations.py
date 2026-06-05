@@ -162,8 +162,9 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         CN6FileOps.exportMaterials(materialList,classList,projpath)
         ## 删除临时文件
         for file in deleteList:
-            print("删除临时文件",file)
-            os.remove(file)
+            if os.path.exists(file):
+                print("删除临时文件",file)
+                os.remove(file)
 
     def export_artdefs(self,context,data:CMT_Exporter_Settings):
         def fill_bins(self,parentnode,doc,bin,assetname):

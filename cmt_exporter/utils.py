@@ -375,6 +375,8 @@ def compress_texture_resolution(image, scale=0.5, output_path=None, max_width=40
     require_square: 是否需要正方形
     返回: 输出文件路径
     """
+    import time
+    total_start = time.time()
     if isinstance(image, str):
         image = bpy.data.images.load(image)
         is_loaded = False
@@ -410,6 +412,8 @@ def compress_texture_resolution(image, scale=0.5, output_path=None, max_width=40
         bpy.data.images.remove(image)
     bpy.data.images.remove(resized)
 
+    total_elapsed = time.time() - total_start
+    print(f"压缩贴图耗时: {total_elapsed:.2f}s")
     return output_path
 
 
@@ -496,7 +500,7 @@ def extract_packed_textures_to_file(input_path, output_dir=None):
 
     bpy.data.images.remove(image)
     total_elapsed = time.time() - total_start
-    print(f"总耗时: {total_elapsed:.2f}s")
+    print(f"分解鸣潮法线贴图耗时: {total_elapsed:.2f}s")
     return result
 def create_mat(loc,rot,sca):
     return Matrix.LocRotScale(Vector(loc), rot, Vector(sca))

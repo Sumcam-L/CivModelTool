@@ -103,13 +103,14 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
         if len(self.Textures) == 0:
             for key,v in g_Mat_json[self.Class].items():
                 if "AssetObject" not in v:
-                    tex = self.Textures.add()
+                    # tex = self.Textures.add()
                     parentClass = self.get_parentgeo_class(context,self.FileName)
                     self.Class = parentClass if parentClass else self.Class
-                    
-                    tex.matName = self.FileName
-                    tex.Class = parentClass if parentClass else self.Class
-                    tex.text = key
+                    print(1111111111,self.FileName,self.Class)
+
+                    # tex.matName = self.FileName
+                    # tex.Class = parentClass if parentClass else self.Class
+                    # tex.text = key
     def mat_class_update(self,context):
         self.Textures.clear()
         for key,v in g_Mat_json[self.Class].items():
@@ -299,6 +300,14 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     CurrentMatIndex : bpy.props.IntProperty(default=0)
     
     MaterialList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_Material)
+    
+    
+    
+    MaterialKeywords:bpy.props.StringProperty(name="材质关键字", description="材质关键字",default="")
+    MaterialTargetClass:bpy.props.EnumProperty(name="目标材质类型",description="选择目标材质类型",translation_context="CMT",items=get_material_class_items,default=0)
+    
+    
+    
     TexCustomExportScript:bpy.props.StringProperty(
         name="自定义贴图导出脚本",
         description="自定义贴图导出脚本",

@@ -19,6 +19,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         uvCount = data.UVCount
         script_dir = str(Path(__file__).parent)
         templatefile = os.path.join(script_dir,"templates","uv"+str(uvCount)+".fgx")
+        wigfile = os.path.join(script_dir,"templates","emptywig.wig")
         
         
         isTriangulation = data.IsTriangulation
@@ -36,7 +37,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
             if len(objSet) == 0:
                 continue
             do_export(str(temppath.absolute()),isTriangulation,objSet)
-            CN6FileOps.exportModel(str(temppath),str(Path(projpath , "Geometries" , geo.FileName + ".fgx")),uvCount,templatefile,geo.Class)
+            CN6FileOps.exportModel(str(temppath),str(Path(projpath , "Geometries" , geo.FileName + ".fgx")),uvCount,templatefile,wigfile,geo.Class)
 
         os.remove(str(temppath))
     def export_animations(self,context,data: CMT_Exporter_Settings):
@@ -508,6 +509,24 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
         data = context.scene.CMT.ExporterSettings
         artdef = data.ArtdefList[data.CurrentArtdefIndex]
         artdef.Instances.remove(artdef.ActivedPropertyIndex)
+        
+        return {"FINISHED"}
+    
+class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
+    bl_idname = "cmt.exporter_ot_modifymattypebykeywords"
+    bl_label = ""
+    bl_description ="按关键字修改材质类型"
+
+    def execute(self, context:bpy.types.Context):
+        data = context.scene.CMT.ExporterSettings
+        for mat in data.MaterialList:
+            if data.MaterialTargetClass:
+                keywords = data.MaterialKeywords.lower()
+                if keywords in mat.FileName.lower():
+                    mat.Class = data.MaterialTargetClass
+                    print("修改材质类型",mat.FileName)
+            
+        
         
         return {"FINISHED"}
 

@@ -142,11 +142,17 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                         matCol.prop(curMat,"Class")
                         
                         matCol.template_list("CMT_Exporter_UL_TextureList", "", curMat, "Textures", curMat,  "ActivedPropertyIndex",maxrows=10)
-                        scriptCol = col.column()
-                        scriptCol.prop(data,"TextureCompressionRate")
-                        scriptCol.prop(data,"TexEmbededExportScript")
-                        scriptCol.prop(data,"TexCustomExportScript")
-                        scriptCol.enabled = data.IsExportMaterial
+                        
+                scriptCol = col.column()
+                scriptCol.prop(data,"MaterialKeywords")
+                batchModifyRow = scriptCol.row()
+                batchModifyRow.prop(data,"MaterialTargetClass")
+                batchModifyRow.operator("cmt.exporter_ot_modifymattypebykeywords",text="按关键字修改材质类型")
+                
+                scriptCol.prop(data,"TextureCompressionRate")
+                scriptCol.prop(data,"TexEmbededExportScript")
+                scriptCol.prop(data,"TexCustomExportScript")
+                scriptCol.enabled = data.IsExportMaterial
             col.prop(data,"IsExportArtdef",icon="ASSET_MANAGER")
             # col.prop(data,"IsExportArtdef")
             artdefCol = col.column()

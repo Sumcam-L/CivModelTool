@@ -252,7 +252,12 @@ def matlist_refresh(self, context):
     
     # 获取符合条件的材质列表
     matlist = [mat for mat in mats if mat_poll(data, mat)]
-    
+    matNames = [mat.name for mat in matlist]
+    # 先清理不存在的材质
+    for i in range(len(data.MaterialList) - 1, -1, -1):
+        if data.MaterialList[i].FileName not in matNames:
+            data.MaterialList.remove(i)
+            
     # 获取已存在的材质名称集合
     existing_names = {v.FileName for v in data.MaterialList}
     

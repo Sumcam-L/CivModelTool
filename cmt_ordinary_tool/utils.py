@@ -110,3 +110,44 @@ def get_bind_count():
                         count += 1
                 return count
             return None
+
+
+def remove_empty_shape_keys(obj, threshold=0.0001):
+    """删除物体上的空形态键（不影响网格的形态键）"""
+    if obj.type != "MESH":
+        return 0
+    
+    # 检查是否有形态键
+    if not obj.data.shape_keys:
+        return 0
+    
+    # 获取基础形态键
+    basis_key = obj.data.shape_keys.key_blocks[0]
+    removed_count = 0
+    
+    # 从后往前遍历，避免删除时索引变化
+    for i in range(len(obj.data.shape_keys.key_blocks) - 1, 0, -1):
+        key = obj.data.shape_keys.key_blocks[i]
+        
+        # 跳过基础形态键
+        if key.name == "Basis":
+            continue
+        
+        # 检查是否所有顶点位置都与基础形态键相同
+        is_empty = True
+        for j in range(len(key.data)):
+            basis_co = basis_key.data[j].co
+            key_co = key.data[j].co
+            
+            # 计算距离
+            diff = (key_co - basis_co).length
+            if diff > threshold:
+                is_empty = False
+                break
+        
+        # 如果是空形态键，则删除
+        if is_empty:
+            obj.shape_key_remove(key)
+            removed_count += 1
+    
+    return removed_count

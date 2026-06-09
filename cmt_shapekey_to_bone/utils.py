@@ -49,9 +49,9 @@ def normalize(mesh, shapekeyVertexIndex, armature):
                 mesh.vertex_groups[groupEle.group].remove([shapekeyVertexIndex])
 
 
-    vertex_groups = obj.vertex_groups
-    for vert in obj.data.vertices:
-        for g in obj.data.vertices[vert.index].groups:
+    vertex_groups = mesh.vertex_groups
+    for vert in mesh.data.vertices:
+        for g in mesh.data.vertices[vert.index].groups:
             if g.weight <= 0.001:
                 vertex_groups[g.group].remove([vert.index])
 

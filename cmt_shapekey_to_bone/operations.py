@@ -122,11 +122,11 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                 else:
                     parentBone = armature.data.edit_bones["SKB_Root"]
                 parentBone1 = None
-                if bpy.context.scene.ShapeKeyToBone_ParentBone == "None":
+                if settings.ParentBone == "None":
                     parentBone1 = None
                 else:
                     parentBone1 = currentArmature.data.edit_bones[
-                        bpy.context.scene.ShapeKeyToBone_ParentBone
+                        settings.ParentBone
                     ]
                 if parentBone1:
                     parentBone.parent = parentBone1

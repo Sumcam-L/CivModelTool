@@ -55,6 +55,7 @@ class CMT_OT_PT_Panel(bpy.types.Panel):
             column.operator("cmt.ot_ot_removenotbindinggroups", text="删除零权重顶点组")
             column.operator("cmt.ot_ot_removegroupfromvertexs", text="清理顶点空绑定")
             column.operator("cmt.ot_ot_removeemptymaterialslots", text="清理未使用的材质槽")
+            column.operator("cmt.ot_ot_removeemptyshapekeys", text="删除空形态键")
     # 自定义界面布局
     def draw(self, context):
         layout = self.layout

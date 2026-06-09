@@ -62,3 +62,26 @@ class CMT_OT_RemoveEmptyMaterial(bpy.types.Operator):
             bpy.ops.object.material_slot_remove_unused()
 
         return {"FINISHED"}
+
+
+class CMT_OT_RemoveEmptyShapeKeys(bpy.types.Operator):
+    bl_idname = "cmt.ot_ot_removeemptyshapekeys"
+    bl_label = "删除空形态键"
+    bl_description = "删除不影响网格的形态键（保留基础形态键）"
+    
+    def execute(self, context):
+        obj = context.object
+        if obj and obj.type == "MESH":
+            total_removed = 0
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+                    removed = remove_empty_shape_keys(obj)
+                    total_removed += removed
+            
+            if total_removed > 0:
+                self.report({"INFO"}, f"已删除 {total_removed} 个空形态键")
+            else:
+                self.report({"INFO"}, "没有找到空形态键")
+        else:
+            self.report({"WARNING"}, "请选中一个网格物体")
+        return {"FINISHED"}

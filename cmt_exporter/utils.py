@@ -1,15 +1,25 @@
 import bpy
-import clr 
-import System
+
+
 from pathlib import Path
 from mathutils import Euler
-from System.Collections.Generic import Dictionary
-from System import Array, Single
+
 import os
 import json
 from xml.dom.minidom import parse
 import xml.dom.minidom
 import re
+import sys
+
+# 添加依赖库路径到sys.path
+libs_path = os.path.join(os.path.dirname(__file__), "libs")
+if libs_path not in sys.path:
+    sys.path.append(libs_path)
+    
+import clr 
+import System
+from System.Collections.Generic import Dictionary
+from System import Array, Single
 
 def is_dll_loaded(dll_name):
     """
@@ -585,18 +595,20 @@ def read_action_data(action_name):
                     
                     path = f.data_path
                     idx = f.array_index
-                    boneName = re.search(r'\["(.*?)"\]', path).group(1)
-                    if boneName in group_channels:
-                        channels = group_channels[boneName]
-                    if "location" in path:
-                        channels["loc"][idx] = f
-                    elif "rotation_euler" in path:
-                        channels["rot_e"][idx] = f
-                    elif "rotation_quaternion" in path:
-                        channels["rot_q"][idx] = f
-                    elif "scale" in path:
-                        channels["sca"][idx] = f
-                    group_channels[boneName] = channels
+                    temp = re.search(r'\["(.*?)"\]', path)
+                    if temp:
+                        boneName = temp.group(1)
+                        if boneName in group_channels:
+                            channels = group_channels[boneName]
+                        if "location" in path:
+                            channels["loc"][idx] = f
+                        elif "rotation_euler" in path:
+                            channels["rot_e"][idx] = f
+                        elif "rotation_quaternion" in path:
+                            channels["rot_q"][idx] = f
+                        elif "scale" in path:
+                            channels["sca"][idx] = f
+                        group_channels[boneName] = channels
 
                 for bone_name in sorted(group_channels.keys()):
                     cs_bones_dict[bone_name] = BoneData()

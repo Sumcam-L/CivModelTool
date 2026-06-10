@@ -1,9 +1,7 @@
 import bpy
-from mathutils import Vector
 
 from collections import defaultdict
 import time
-from collections import deque
 
 from .utils import*
 
@@ -21,6 +19,7 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
         currentArmature = settings.CurrentArmature
         abandonmentRate = settings.AbandonmentRate
         weightSharing = settings.WeightSharing
+        directionTolerance = settings.DirectionTolerance
         actionName = settings.ActionName
         useExistAction = settings.UseExistAction
         start = bpy.context.scene.frame_start
@@ -65,7 +64,7 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
 
                 basis_key = shape_keys.key_blocks[0]
 
-                sameOffset = defaultdict(int)
+                sameDirection = defaultdict(lambda: {"max_offset_length": 0, "max_offset_vertex": -1, "vertices": {}})
                 influence_vertices = defaultdict(int)
 
                 for fcurve in shapekeyaction.fcurves:
@@ -82,8 +81,6 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                         for index, vert in enumerate(shape_key.data):
                             shape_offset = vert.co - basis_key.data[index].co
                             if shape_offset.length > 1e-4:
-                                # vector_tuple = tuple(round(component, 4) for component in vert.co)
-
                                 if index not in influence_vertices:
                                     influence_vertices[index] = {
                                         "RelatedShapeKeyCount": 0,
@@ -98,21 +95,36 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                                 influence_vertices[index]["BoneName"] = bone_name
                                 influence_vertices[index]["RelatedShapeKeyCount"] += 1
                                 influence_vertices[index]["Dispose"] = False
+                                influence_vertices[index]["MaxOffsetLength"] = shape_offset.length
 
-                                vector_tuple1 = tuple(
-                                    round(component, 4) for component in shape_offset
-                                )
-                                if vector_tuple1 not in sameOffset:
-                                    sameOffset[vector_tuple1] = {}
-
-                                if shape_key_name not in sameOffset[vector_tuple1]:
-                                    sameOffset[vector_tuple1][shape_key_name] = []
-
-                                sameOffset[vector_tuple1][shape_key_name].append(index)
+                                # 计算方向并查找匹配的方向组
+                                direction = shape_offset.normalized()
+                                matched_direction = find_matching_direction(direction, sameDirection.keys(), directionTolerance)
+                                
+                                # 如果没有匹配的方向组，创建新的
+                                if matched_direction is None:
+                                    matched_direction = round_vector(direction)
+                                    sameDirection[matched_direction] = {
+                                        "max_offset_length": 0,
+                                        "max_offset_vertex": -1,
+                                        "vertices": {}
+                                    }
+                                
+                                # 更新最大偏移量顶点
+                                if shape_offset.length > sameDirection[matched_direction]["max_offset_length"]:
+                                    sameDirection[matched_direction]["max_offset_length"] = shape_offset.length
+                                    sameDirection[matched_direction]["max_offset_vertex"] = index
+                                
+                                # 记录顶点信息
+                                if shape_key_name not in sameDirection[matched_direction]["vertices"]:
+                                    sameDirection[matched_direction]["vertices"][shape_key_name] = []
+                                
+                                sameDirection[matched_direction]["vertices"][shape_key_name].append({
+                                    "index": index,
+                                    "offset_length": shape_offset.length
+                                })
                 armature.hide_set(False)
                 bpy.context.view_layer.objects.active = armature
-                # bpy.context.view_layer.objects.active = bpy.data.objects[1]
-                # armature.select_set(True)
                 bpy.ops.object.mode_set(mode="EDIT")
                 parentBone = None
                 if "SKB_Root" not in armature.data.edit_bones:
@@ -132,22 +144,30 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                     parentBone.parent = parentBone1
 
                 if weightSharing:
-                    for vector_tuple1, key in sameOffset.items():
-                        for shape_key_name, vertexCoGroup in key.items():
-                            combineName = ""
-                            for i, index in enumerate(vertexCoGroup):
-                                # print(influence_vertices[index]["RelatedShapeKeyCount"])
+                    for direction_tuple, direction_data in sameDirection.items():
+                        max_vertex_index = direction_data["max_offset_vertex"]
+                        if max_vertex_index == -1:
+                            continue
+                        
+                        # 使用偏移最大的顶点的骨骼名称
+                        combineName = influence_vertices[max_vertex_index]["BoneName"]
+                        max_offset_length = direction_data["max_offset_length"]
+                        
+                        for shape_key_name, vertex_list in direction_data["vertices"].items():
+                            for vertex_info in vertex_list:
+                                index = vertex_info["index"]
+                                offset_length = vertex_info["offset_length"]
+                                
                                 if (
                                     influence_vertices[index]["RelatedShapeKeyCount"]
                                     == 1
                                 ):
                                     influence_vertices[index]["Dispose"] = True
-                                    if combineName == "":
+                                    if index == max_vertex_index:
                                         influence_vertices[index]["Dispose"] = False
-                                        combineName = influence_vertices[index][
-                                            "BoneName"
-                                        ]
                                     influence_vertices[index]["BoneName"] = combineName
+                                    # 记录权重比例（相对于最大偏移量）
+                                    influence_vertices[index]["WeightRatio"] = offset_length / max_offset_length
 
                 print(
                     f"获取顶点数据完成，共{len(influence_vertices)}个受影响顶点，耗时：{time.time() - startTime1:.4f}"
@@ -223,7 +243,10 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                         vg = obj.vertex_groups.new(
                             name=vertexInfo["BoneName"]
                         )  # 创建顶点组
-                    vg.add([index], 1.0, "REPLACE")  # 1.0 是权重
+                    
+                    # 计算权重：使用权重比例，默认为1.0
+                    weight = vertexInfo.get("WeightRatio", 1.0)
+                    vg.add([index], weight, "REPLACE")
                     normalize(obj, index, armature)
 
                 bpy.ops.object.mode_set(mode="POSE")
@@ -244,9 +267,16 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                         frame1 = FrameInfo["Frame"]
                         relativeCo = FrameInfo["Co"]
                         if frame1 != start and frame1 != end:
-                            if (
+                            # 与前一帧相同
+                            same_as_prev = (
                                 relativeCo - value[index1 - 1]["Co"]
-                            ).length_squared < threshold**2:
+                            ).length_squared < threshold**2
+                            # 与后一帧相同
+                            same_as_next = (
+                                relativeCo - value[index1 + 1]["Co"]
+                            ).length_squared < threshold**2
+                            # 与前后帧都相同才删除
+                            if same_as_prev and same_as_next:
                                 del transformations[bone_name][index1]
                                 index1 -= 1
                                 frameCount -= 1

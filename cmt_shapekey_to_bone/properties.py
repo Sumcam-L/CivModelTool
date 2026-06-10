@@ -30,6 +30,13 @@ class CMT_S2B_Settings(bpy.types.PropertyGroup):
         description="偏移量相同的顶点共用一根骨骼，可以减少骨骼数量",
         default=True,
     )
+    DirectionTolerance : bpy.props.FloatProperty(
+        name="方向容差",
+        description="方向容差值，值越大同方向的顶点越容易被合并（0.0-1.0）",
+        default=0.01,
+        min=0.0,
+        max=1.0,
+    )
     UseExistAction : bpy.props.BoolProperty(
         name="使用已存在的动作", description="", default=False
     )

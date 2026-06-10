@@ -23,7 +23,7 @@ def create_bone_for_vertex(armature, bone_name, rest_position, parentBone):
     bone.parent = parentBone
     bone.head = rest_position
 
-    bone.tail = Vector((rest_position.x, rest_position.y + 0.3, rest_position.z))
+    bone.tail = Vector((rest_position.x, rest_position.y + 0.001, rest_position.z))
 
     # 使骨骼的 roll 方向对齐
     bone.align_roll(Vector((0, 0, 1)))
@@ -97,6 +97,40 @@ def changeNormal(obj, normals):
 
     mesh.normals_split_custom_set(loop_normals)
     mesh.update()
+
+def clamp_dot_product(dot_product):
+    """将点积限制在[-1, 1]范围内，避免浮点精度误差"""
+    return max(-1.0, min(1.0, dot_product))
+
+
+def find_matching_direction(direction, direction_groups, tolerance):
+    """查找最接近的方向组
+    
+    Args:
+        direction: 要匹配的方向向量（已归一化）
+        direction_groups: 现有方向组的键集合
+        tolerance: 方向容差（0-1之间，0表示必须完全一致）
+    
+    Returns:
+        匹配的方向键，如果没有匹配则返回 None
+    """
+    best_match = None
+    best_dot = -1.0
+    threshold = 1.0 - tolerance
+    
+    for existing_direction in direction_groups:
+        dot_product = clamp_dot_product(direction.dot(Vector(existing_direction)))
+        if dot_product > threshold and dot_product > best_dot:
+            best_dot = dot_product
+            best_match = existing_direction
+    
+    return best_match
+
+
+def round_vector(vector, decimals=4):
+    """将向量四舍五入为元组，用作字典键"""
+    return tuple(round(component, decimals) for component in vector)
+
 
 def separateSelectedPart(normals):
     bpy.ops.object.mode_set(mode="EDIT")

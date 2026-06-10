@@ -20,6 +20,7 @@ class CMT_S2B_PT_Panel(bpy.types.Panel):
         column.prop(data,"AbandonmentRate")
         column.prop(data,"ActionName")
         column.prop(data,"WeightSharing")
+        column.prop(data,"DirectionTolerance")
         column.prop(data,"UseExistAction")
         column1 = box.column()
         column1.enabled = bool(data.TargetMesh and data.CurrentArmature)

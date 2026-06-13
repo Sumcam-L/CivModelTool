@@ -178,7 +178,7 @@ def ast_dsg_update(self,context):
     anmList = self.Animations
     anmList.clear()
     if len(anmList) == 0:
-        for v in g_DSGs_action[self.DSG]:
+        for v in sorted(g_DSGs_action[self.DSG]):
             item = self.Animations.add()
             item.AstName = self.FileName
             item.text = v

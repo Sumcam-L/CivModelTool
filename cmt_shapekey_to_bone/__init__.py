@@ -1,10 +1,21 @@
 import bpy
-from .panels import CMT_S2B_PT_Panel
-from .properties import CMT_S2B_Settings
+from .panels import CMT_S2B_PT_Panel, CMT_S2B_UL_ShapeKeyAnimList, CMT_S2B_OT_AddShapeKeyAnim, CMT_S2B_OT_RemoveShapeKeyAnim
+from .properties import CMT_S2B_Settings, CMT_S2B_ShapeKeyAnimItem
 from .operations import CMT_S2B_OT_Convert,CMT_S2B_OT_ClearShapeKey,CMT_S2B_OT_EditSeparateMesh,CMT_S2B_OT_AutoSeparateMesh
 
 
-classes = [CMT_S2B_PT_Panel,CMT_S2B_Settings,CMT_S2B_OT_Convert,CMT_S2B_OT_ClearShapeKey,CMT_S2B_OT_EditSeparateMesh,CMT_S2B_OT_AutoSeparateMesh]
+classes = [
+    CMT_S2B_ShapeKeyAnimItem,
+    CMT_S2B_UL_ShapeKeyAnimList,
+    CMT_S2B_OT_AddShapeKeyAnim,
+    CMT_S2B_OT_RemoveShapeKeyAnim,
+    CMT_S2B_PT_Panel,
+    CMT_S2B_Settings,
+    CMT_S2B_OT_Convert,
+    CMT_S2B_OT_ClearShapeKey,
+    CMT_S2B_OT_EditSeparateMesh,
+    CMT_S2B_OT_AutoSeparateMesh,
+]
 def get_classes_from_module(module):
     classes = []
 

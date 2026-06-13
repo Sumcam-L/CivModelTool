@@ -20,10 +20,6 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
         abandonmentRate = settings.AbandonmentRate
         weightSharing = settings.WeightSharing
         directionTolerance = settings.DirectionTolerance
-        actionName = settings.ActionName
-        useExistAction = settings.UseExistAction
-        start = bpy.context.scene.frame_start
-        end = bpy.context.scene.frame_end
 
         startTime = time.time()
         startTime1 = startTime
@@ -41,15 +37,19 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                 print(f"找到动画: {shapekeyaction.name}")
                 obj.hide_set(False)
 
-                for fcu in shapekeyaction.fcurves:
-                    if fcu.keyframe_points:
-                        frame = max(
-                            kp.co[0] for kp in fcu.keyframe_points
-                        )  # kp.co[0] 是帧号
-                        if end == bpy.context.scene.frame_end:
-                            end = frame
-                        if frame > end:
-                            end = frame
+                actions_to_process = []
+                for item in settings.ShapeKeyAnimList:
+                    if item.action:
+                        actions_to_process.append(item.action)
+                if not actions_to_process:
+                    actions_to_process.append(shapekeyaction)
+
+                animated_shape_keys = set()
+                for action in actions_to_process:
+                    for fcu in action.fcurves:
+                        if "key_blocks" in fcu.data_path:
+                            sk_name = fcu.data_path.split('"')[1]
+                            animated_shape_keys.add(sk_name)
                 bpy.context.view_layer.objects.active = obj
                 # 切换到对象模式
                 bpy.ops.object.mode_set(mode="OBJECT")
@@ -64,65 +64,36 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
 
                 basis_key = shape_keys.key_blocks[0]
 
-                sameDirection = defaultdict(lambda: {"max_offset_length": 0, "max_offset_vertex": -1, "vertices": {}})
                 influence_vertices = defaultdict(int)
 
-                for fcurve in shapekeyaction.fcurves:
-                    data_path = fcurve.data_path
-                    if "key_blocks" in data_path:
-                        shape_key_name = data_path.split('"')[1]
-                        shape_key = shape_keys.key_blocks.get(shape_key_name)
+                # Phase 1: 收集所有受影响顶点的形态键偏移数据
+                for shape_key_name in animated_shape_keys:
+                    shape_key = shape_keys.key_blocks.get(shape_key_name)
 
-                        if not shape_key:
-                            continue
+                    if not shape_key:
+                        continue
 
-                        print(f"\n形态键: {shape_key_name}")
+                    print(f"\n形态键: {shape_key_name}")
 
-                        for index, vert in enumerate(shape_key.data):
-                            shape_offset = vert.co - basis_key.data[index].co
-                            if shape_offset.length > 1e-4:
-                                if index not in influence_vertices:
-                                    influence_vertices[index] = {
-                                        "RelatedShapeKeyCount": 0,
-                                        "RelatedShapeKeyInfo": {},
-                                        "BoneName": "",
-                                    }
+                    for index, vert in enumerate(shape_key.data):
+                        shape_offset = vert.co - basis_key.data[index].co
+                        if shape_offset.length > 1e-4:
+                            if index not in influence_vertices:
+                                influence_vertices[index] = {
+                                    "RelatedShapeKeyCount": 0,
+                                    "RelatedShapeKeyInfo": {},
+                                    "BoneName": "",
+                                }
 
-                                bone_name = f"SKB_{round(vert.co.x,4)}{round(vert.co.y,4)}{round(vert.co.z,4)}"
-                                influence_vertices[index]["RelatedShapeKeyInfo"][
-                                    shape_key_name
-                                ] = shape_offset
-                                influence_vertices[index]["BoneName"] = bone_name
-                                influence_vertices[index]["RelatedShapeKeyCount"] += 1
-                                influence_vertices[index]["Dispose"] = False
-                                influence_vertices[index]["MaxOffsetLength"] = shape_offset.length
-
-                                # 计算方向并查找匹配的方向组
-                                direction = shape_offset.normalized()
-                                matched_direction = find_matching_direction(direction, sameDirection.keys(), directionTolerance)
-                                
-                                # 如果没有匹配的方向组，创建新的
-                                if matched_direction is None:
-                                    matched_direction = round_vector(direction)
-                                    sameDirection[matched_direction] = {
-                                        "max_offset_length": 0,
-                                        "max_offset_vertex": -1,
-                                        "vertices": {}
-                                    }
-                                
-                                # 更新最大偏移量顶点
-                                if shape_offset.length > sameDirection[matched_direction]["max_offset_length"]:
-                                    sameDirection[matched_direction]["max_offset_length"] = shape_offset.length
-                                    sameDirection[matched_direction]["max_offset_vertex"] = index
-                                
-                                # 记录顶点信息
-                                if shape_key_name not in sameDirection[matched_direction]["vertices"]:
-                                    sameDirection[matched_direction]["vertices"][shape_key_name] = []
-                                
-                                sameDirection[matched_direction]["vertices"][shape_key_name].append({
-                                    "index": index,
-                                    "offset_length": shape_offset.length
-                                })
+                            bone_name = f"SKB_{round(vert.co.x,4)}{round(vert.co.y,4)}{round(vert.co.z,4)}"
+                            direction = shape_offset.normalized()
+                            influence_vertices[index]["RelatedShapeKeyInfo"][
+                                shape_key_name
+                            ] = {"offset": shape_offset, "direction": direction}
+                            influence_vertices[index]["BoneName"] = bone_name
+                            influence_vertices[index]["RelatedShapeKeyCount"] += 1
+                            influence_vertices[index]["Dispose"] = False
+                            influence_vertices[index]["MaxOffsetLength"] = shape_offset.length
                 armature.hide_set(False)
                 bpy.context.view_layer.objects.active = armature
                 bpy.ops.object.mode_set(mode="EDIT")
@@ -144,92 +115,88 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                     parentBone.parent = parentBone1
 
                 if weightSharing:
-                    for direction_tuple, direction_data in sameDirection.items():
-                        max_vertex_index = direction_data["max_offset_vertex"]
-                        if max_vertex_index == -1:
+                    # 第一步：按形态键签名分组（哪些形态键影响这个顶点）
+                    signature_groups = defaultdict(list)
+                    for index, vinfo in influence_vertices.items():
+                        sk_names = tuple(sorted(vinfo["RelatedShapeKeyInfo"].keys()))
+                        signature_groups[sk_names].append(index)
+
+                    for sk_names, vertex_indices in signature_groups.items():
+                        # 同签名只有一个顶点，无法合并
+                        if len(vertex_indices) <= 1:
                             continue
-                        
-                        # 使用偏移最大的顶点的骨骼名称
-                        combineName = influence_vertices[max_vertex_index]["BoneName"]
-                        max_offset_length = direction_data["max_offset_length"]
-                        
-                        for shape_key_name, vertex_list in direction_data["vertices"].items():
-                            for vertex_info in vertex_list:
-                                index = vertex_info["index"]
-                                offset_length = vertex_info["offset_length"]
-                                
-                                if (
-                                    influence_vertices[index]["RelatedShapeKeyCount"]
-                                    == 1
-                                ):
-                                    influence_vertices[index]["Dispose"] = True
-                                    if index == max_vertex_index:
-                                        influence_vertices[index]["Dispose"] = False
-                                    influence_vertices[index]["BoneName"] = combineName
-                                    # 记录权重比例（相对于最大偏移量）
-                                    influence_vertices[index]["WeightRatio"] = offset_length / max_offset_length
+
+                        # 第二步：同签名内按方向相似性再分组
+                        direction_groups = []
+                        for idx in vertex_indices:
+                            # 取该顶点在每个形态键下的归一化方向，组成方向元组
+                            dir_tuple = tuple(
+                                influence_vertices[idx]["RelatedShapeKeyInfo"][sk]["direction"]
+                                for sk in sk_names
+                            )
+                            # 检查是否与已有方向组匹配（所有形态键方向都需在容差内）
+                            matched = False
+                            for group in direction_groups:
+                                representative_dir = group["representative_dir"]
+                                all_match = True
+                                for d1, d2 in zip(dir_tuple, representative_dir):
+                                    if clamp_dot_product(d1.dot(d2)) < (1.0 - directionTolerance):
+                                        all_match = False
+                                        break
+                                if all_match:
+                                    group["vertices"].append(idx)
+                                    matched = True
+                                    break
+                            if not matched:
+                                direction_groups.append({
+                                    "representative_dir": dir_tuple,
+                                    "vertices": [idx]
+                                })
+
+                        for dir_group in direction_groups:
+                            group_verts = dir_group["vertices"]
+                            # 同方向组只有一个顶点，无需合并
+                            if len(group_verts) <= 1:
+                                continue
+
+                            # 第三步：找组内总偏移最大的顶点作为代表骨骼
+                            max_vertex_index = -1
+                            max_offset_total = 0
+                            for idx in group_verts:
+                                total = sum(
+                                    influence_vertices[idx]["RelatedShapeKeyInfo"][sk]["offset"].length
+                                    for sk in sk_names
+                                )
+                                if total > max_offset_total:
+                                    max_offset_total = total
+                                    max_vertex_index = idx
+
+                            if max_vertex_index == -1 or max_offset_total == 0:
+                                continue
+
+                            combineName = influence_vertices[max_vertex_index]["BoneName"]
+
+                            # 第四步：组内所有顶点合并到代表骨骼，按偏移比例分配权重
+                            for idx in group_verts:
+                                total = sum(
+                                    influence_vertices[idx]["RelatedShapeKeyInfo"][sk]["offset"].length
+                                    for sk in sk_names
+                                )
+                                influence_vertices[idx]["Dispose"] = True
+                                if idx == max_vertex_index:
+                                    influence_vertices[idx]["Dispose"] = False
+                                influence_vertices[idx]["BoneName"] = combineName
+                                influence_vertices[idx]["WeightRatio"] = total / max_offset_total
 
                 print(
                     f"获取顶点数据完成，共{len(influence_vertices)}个受影响顶点，耗时：{time.time() - startTime1:.4f}"
                 )
 
-                startTime1 = time.time()
-                print("开始计算动画数据")
-
-                transformations = {}
-                abandonList = {}
-                maxOffset = 0
-                frameCount = 0
-                frame = start
-                while frame <= end:
-                    bpy.context.scene.frame_set(frame)
-                    depsgraph = bpy.context.evaluated_depsgraph_get()
-                    obj_eval = obj.evaluated_get(depsgraph)
-                    mesh_eval = obj_eval.to_mesh()
-                    for v in mesh_eval.vertices:
-                        if v.index in influence_vertices:
-                            bone_name = influence_vertices[v.index]["BoneName"]
-                            bone = armature.pose.bones.get(bone_name)
-                            if not influence_vertices[v.index]["Dispose"]:
-                                world_co = obj_eval.matrix_world @ v.co
-                                relativeCo = world_co - basis_key.data[v.index].co
-                                transformations.setdefault(bone_name, [])
-                                if bone_name not in abandonList:
-                                    abandonList[bone_name] = 0
-                                abandonList[bone_name] += relativeCo.length
-                                if frame == end and abandonList[bone_name] > maxOffset:
-                                    maxOffset = abandonList[bone_name]
-                                transformations[bone_name].append(
-                                    {"Frame": frame, "Co": relativeCo}
-                                )
-                                # transformations[bone_name][frame] = relativeCo
-                                frameCount += 1
-
-                    obj_eval.to_mesh_clear()
-                    frame = frame + 1
-
-                print(f"计算动画数据完成，耗时：{time.time() - startTime1:.4f}")
-                if abandonmentRate > 0:
-                    startTime1 = time.time()
-                    delCount = 0
-                    print("开始舍弃数据")
-                    for i, v in abandonList.items():
-                        if v <= maxOffset * abandonmentRate / 100:
-                            del transformations[i]
-                            delCount += 1
-                    print(
-                        f"舍弃数据完成,共删除{delCount}根骨骼的数据，耗时：{time.time() - startTime1:.4f}"
-                    )
-
                 print("开始绑定骨骼")
                 boneCount = 0
                 startTime1 = time.time()
                 for index, vertexInfo in influence_vertices.items():
-
-                    if (
-                        vertexInfo["BoneName"] not in armature.data.edit_bones
-                        and vertexInfo["BoneName"] in transformations
-                    ):
+                    if not vertexInfo["Dispose"] and vertexInfo["BoneName"] not in armature.data.edit_bones:
                         create_bone_for_vertex(
                             armature,
                             vertexInfo["BoneName"],
@@ -238,152 +205,169 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                         )
                         boneCount += 1
 
-                    vg = obj.vertex_groups.get(vertexInfo["BoneName"])  # 获取已有顶点组
+                    vg = obj.vertex_groups.get(vertexInfo["BoneName"])
                     if vg is None:
-                        vg = obj.vertex_groups.new(
-                            name=vertexInfo["BoneName"]
-                        )  # 创建顶点组
-                    
-                    # 计算权重：使用权重比例，默认为1.0
+                        vg = obj.vertex_groups.new(name=vertexInfo["BoneName"])
+
                     weight = vertexInfo.get("WeightRatio", 1.0)
                     vg.add([index], weight, "REPLACE")
-                    normalize(obj, index, armature)
+                    normalize(obj, index, armature, set(influence_vertices.keys()))
+                    if weight < 1.0 and parentBone:
+                        parent_vg = obj.vertex_groups.get(parentBone.name)
+                        if parent_vg is None:
+                            parent_vg = obj.vertex_groups.new(name=parentBone.name)
+                        parent_vg.add([index], 1.0 - weight, "REPLACE")
 
                 bpy.ops.object.mode_set(mode="POSE")
                 print(
                     f"绑定骨骼完成，共新增{boneCount}根骨骼，耗时：{time.time() - startTime1:.4f}"
                 )
 
-                startTime1 = time.time()
-                print("开始清理冗余数据")
-                # 清理冗余关键帧
+                bone_dependents = {}
+                for index, vertexInfo in influence_vertices.items():
+                    bn = vertexInfo["BoneName"]
+                    if vertexInfo.get("Dispose", False):
+                        bone_dependents.setdefault(bn, True)
+                    elif bn not in bone_dependents:
+                        bone_dependents[bn] = False
 
-                threshold = 1e-4
-                # transformations_backup = transformations
-                for bone_name, value in transformations.items():
-                    index1 = 0
-                    while index1 < len(value):
-                        FrameInfo = value[index1]
-                        frame1 = FrameInfo["Frame"]
-                        relativeCo = FrameInfo["Co"]
-                        if frame1 != start and frame1 != end:
-                            # 与前一帧相同
-                            same_as_prev = (
-                                relativeCo - value[index1 - 1]["Co"]
-                            ).length_squared < threshold**2
-                            # 与后一帧相同
-                            same_as_next = (
-                                relativeCo - value[index1 + 1]["Co"]
-                            ).length_squared < threshold**2
-                            # 与前后帧都相同才删除
-                            if same_as_prev and same_as_next:
-                                del transformations[bone_name][index1]
-                                index1 -= 1
-                                frameCount -= 1
-                            else:
-                                tRatio = 0.5
-                                theoValue = (
-                                    transformations[bone_name][index1 - 1]["Co"]
-                                    + (
-                                        transformations[bone_name][index1 + 1]["Co"]
-                                        - transformations[bone_name][index1 - 1]["Co"]
-                                    )
-                                    * tRatio
-                                )
-                                if (
-                                    relativeCo - theoValue
-                                ).length_squared < threshold**2:
-                                    del transformations[bone_name][index1]
-                                    index1 -= 1
-                                    frameCount -= 1
+                last_action = None
+                for action in actions_to_process:
+                    action_fcurves = {}
+                    action_frame_start = float('inf')
+                    action_frame_end = float('-inf')
+                    for fcu in action.fcurves:
+                        if "key_blocks" in fcu.data_path:
+                            sk_name = fcu.data_path.split('"')[1]
+                            action_fcurves[sk_name] = fcu
+                    for sk_name, fcu in action_fcurves.items():
+                        for kp in fcu.keyframe_points:
+                            if kp.co[0] < action_frame_start:
+                                action_frame_start = kp.co[0]
+                            if kp.co[0] > action_frame_end:
+                                action_frame_end = kp.co[0]
 
-                        index1 += 1
+                    if not action_fcurves:
+                        continue
 
-                frameIndex = 1
-                action = None
-                print(f"清理冗余数据完成，耗时：{time.time() - startTime1:.4f}")
-                startTime1 = time.time()
+                    action_frame_start = int(action_frame_start)
+                    action_frame_end = int(action_frame_end)
+                    print(f"\n处理动画: {action.name} (帧 {action_frame_start}-{action_frame_end})")
 
-                print("开始插入关键帧")
-                if actionName == "":
-                    if useExistAction and armature.animation_data.action is not None:
-                        actionName = armature.animation_data.action.name
+                    startTime1 = time.time()
+                    transformations = {}
+                    abandonList = {}
+                    maxOffset = 0
+                    frameCount = 0
+                    frame = action_frame_start
+
+                    # Phase 3: 逐帧计算骨骼动画（直接从fcurve值×偏移量，无需depsgraph评估）
+                    while frame <= action_frame_end:
+                        for idx, vinfo in influence_vertices.items():
+                            bone_name = vinfo["BoneName"]
+                            if not vinfo["Dispose"]:
+                                # 累加该顶点在所有当前动作形态键下的位移
+                                displacement = Vector((0, 0, 0))
+                                for sk_name, fcu in action_fcurves.items():
+                                    if sk_name in vinfo["RelatedShapeKeyInfo"]:
+                                        offset = vinfo["RelatedShapeKeyInfo"][sk_name]["offset"]
+                                        displacement += fcu.evaluate(frame) * offset
+
+                                transformations.setdefault(bone_name, [])
+                                if bone_name not in abandonList:
+                                    abandonList[bone_name] = 0
+                                abandonList[bone_name] += displacement.length
+                                if frame == action_frame_end and abandonList[bone_name] > maxOffset:
+                                    maxOffset = abandonList[bone_name]
+                                transformations[bone_name].append({"Frame": frame, "Co": displacement})
+                                frameCount += 1
+
+                        frame += 1
+
+                    print(f"计算动画数据完成，骨骼数={len(transformations)}，耗时：{time.time() - startTime1:.4f}")
+
+                    if abandonmentRate > 0:
+                        delCount = 0
+                        for i, v in abandonList.items():
+                            if v <= maxOffset * abandonmentRate / 100:
+                                if not bone_dependents.get(i, False):
+                                    del transformations[i]
+                                    delCount += 1
+                        print(f"舍弃数据完成,共删除{delCount}根骨骼的数据")
+
+                    #简化数据
+                    threshold = 1e-4
+                    # for bone_name, value in transformations.items():
+                    #     index1 = 0
+                    #     while index1 < len(value):
+                    #         FrameInfo = value[index1]
+                    #         frame1 = FrameInfo["Frame"]
+                    #         relativeCo = FrameInfo["Co"]
+                    #         if frame1 != action_frame_start and frame1 != action_frame_end:
+                    #             same_as_prev = (
+                    #                 relativeCo - value[index1 - 1]["Co"]
+                    #             ).length_squared < threshold**2
+                    #             same_as_next = (
+                    #                 relativeCo - value[index1 + 1]["Co"]
+                    #             ).length_squared < threshold**2
+                    #             if same_as_prev and same_as_next:
+                    #                 del transformations[bone_name][index1]
+                    #                 index1 -= 1
+                    #                 frameCount -= 1
+                    #             else:
+                    #                 theoValue = (
+                    #                     transformations[bone_name][index1 - 1]["Co"]
+                    #                     + (
+                    #                         transformations[bone_name][index1 + 1]["Co"]
+                    #                         - transformations[bone_name][index1 - 1]["Co"]
+                    #                     ) * 0.5
+                    #                 )
+                    #                 if (
+                    #                     relativeCo - theoValue
+                    #                 ).length_squared < threshold**2:
+                    #                     del transformations[bone_name][index1]
+                    #                     index1 -= 1
+                    #                     frameCount -= 1
+                    #         index1 += 1
+
+                    output_action_name = f"SKB_{action.name}"
+                    if output_action_name in bpy.data.actions:
+                        action_out = bpy.data.actions[output_action_name]
+                        for fc in action_out.fcurves:
+                            fc.keyframe_points.clear()
                     else:
-                        actionName = "Action"
+                        action_out = bpy.data.actions.new(name=output_action_name)
+                        action_out.name = output_action_name
 
-                # 使用现有的动作还是新建一个动作
-                if useExistAction and actionName in bpy.data.actions:
-                    action = bpy.data.actions[actionName]
-                else:
-                    action = bpy.data.actions.new(name=actionName)
-                    # 必须要手动设定 name，因为在 new 时，如果名字已存在，会因为自动规避而把自身改名为后缀为 .xxx 的动作，导致名字与需要的不一样
-                    # 当主动设置name时，则会反过来自动把已存在名字的动作那个进行规避改名，从而保证当前新建的动作名字一定是指定的名字
-                    action.name = actionName
+                    for bone_name, value in transformations.items():
+                        fcurves = [None] * 3
+                        data_path = f'pose.bones["{bone_name}"].location'
+                        for axis_i in range(3):
+                            fcurves[axis_i] = get_or_create_fcurve(
+                                action_out, bone_name, axis_i, axis_i, data_path=data_path
+                            )
+                        for fc_i, fc in enumerate(fcurves):
+                            start_kps = len(fc.keyframe_points)
+                            fc.keyframe_points.add(len(value))
+                            
+                            for frameInfo, kp2 in zip(
+                                value, fc.keyframe_points[start_kps:]
+                            ):
+                                kp2.co = (frameInfo["Frame"], frameInfo["Co"][fc_i])
+                                kp2.interpolation = "LINEAR"
+                            fc.update()
 
-                # all_bone_fcurves = []
-                for bone_name, value in transformations.items():
-                    fcurves = [None] * 3
-                    data_path = f'pose.bones["{bone_name}"].location'
-                    for axis_i in range(3):
-                        channel_i = axis_i
-                        fcurves[channel_i] = get_or_create_fcurve(
-                            action, bone_name, channel_i, axis_i, data_path=data_path
-                        )
+                    last_action = action_out
+                    print(f"动画 {action.name} 处理完成，共插入{frameCount}个关键帧")
 
-                    # for frame1, relativeCo in value.items():
-                    #     bone1 = armature.pose.bones.get(bone_name)
+                if last_action:
+                    try:
+                        armature.animation_data.action = last_action
+                    except AttributeError:
+                        armature.animation_data_clear()
+                        armature.animation_data_create()
+                        armature.animation_data.action = last_action
 
-                    #     print(f"正在添加关键帧：{frameIndex}/{frameCount}")
-                    #     add_keyframe(bone1, frame1, relativeCo)
-                    #     frameIndex += 1
-                    f_index = 0
-                    for fc_i, fc in enumerate(fcurves):
-                        # 支持就地插入
-                        f_index += 1
-                        start_kps = len(fc.keyframe_points)
-                        fc.keyframe_points.add(len(value))
-                        for frameInfo, kp2 in zip(
-                            value, fc.keyframe_points[start_kps:]
-                        ):
-                            frame_id = frameInfo["Frame"]
-                            valueY = frameInfo["Co"][fc_i]
-                            # kp1 = [t[0], t[1], t[2]]
-
-                            # 第一个值是帧号，第二个是值
-                            kp2.co = (frame_id, valueY)
-                            # 默认插值使用线性。
-                            kp2.interpolation = "LINEAR"
-                            if f_index == 1:
-                                frameIndex += 1
-                                if (frameIndex / frameCount) % 0.25 == 0:
-                                    print(
-                                        f"已完成{(frameIndex/frameCount) * 100}%  {frameIndex}/{frameCount}"
-                                    )
-
-                        # 自动排序关键帧，确保关键帧按时间顺序排列，这在clean时非常重要
-                        fc.update()
-                    # all_bone_fcurves.extend(fcurves)
-                print(
-                    f"插入关键帧完成，共插入{frameCount}个关键帧，耗时：{time.time() - startTime1:.4f}"
-                )
-                # startTime1 = time.time()
-
-                print(
-                    f"形态键动画已转换为骨骼动画，总耗时:{time.time() - startTime:.4f}"
-                )
-
-                try:
-                    armature.animation_data.action = action
-                except AttributeError as e:
-                    # print("Catch exception.", str(e.with_traceback()))
-                    # ！破坏性操作，但是符合多数人的直觉
-                    # 激活新动作失败，多半是因为使用了NLA序列
-                    # 直接清除掉只读的动作堆栈就行
-                    armature.animation_data_clear()
-                    armature.animation_data_create()
-                    armature.animation_data.action = action
-
-                # obj = bpy.context.scene.ShapeKeyToBone_TargetMesh
                 shape_keys = obj.data.shape_keys
                 if shape_keys:
                     if shape_keys.animation_data and shape_keys.animation_data.action:
@@ -391,6 +375,8 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                     for i, key_block in enumerate(shape_keys.key_blocks):
                         if key_block.name != "Basis" or i != 0:
                             key_block.value = 0.0
+
+                print(f"形态键动画已转换为骨骼动画，总耗时:{time.time() - startTime:.4f}")
 
         return {"FINISHED"}
 

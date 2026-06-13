@@ -34,7 +34,7 @@ def add_keyframe(bone, frame, delta_position):
     bone.location = delta_position
     bone.keyframe_insert(data_path="location", frame=frame)
 
-def normalize(mesh, shapekeyVertexIndex, armature):
+def normalize(mesh, shapekeyVertexIndex, armature, influenced_indices=None):
     temp = -1
     tempGroup = []
     for g in mesh.data.vertices[shapekeyVertexIndex].groups:
@@ -48,12 +48,12 @@ def normalize(mesh, shapekeyVertexIndex, armature):
                 groupEle.weight = 0
                 mesh.vertex_groups[groupEle.group].remove([shapekeyVertexIndex])
 
-
     vertex_groups = mesh.vertex_groups
-    for vert in mesh.data.vertices:
-        for g in mesh.data.vertices[vert.index].groups:
+    indices = influenced_indices if influenced_indices else [v.index for v in mesh.data.vertices]
+    for idx in indices:
+        for g in mesh.data.vertices[idx].groups:
             if g.weight <= 0.001:
-                vertex_groups[g.group].remove([vert.index])
+                vertex_groups[g.group].remove([idx])
 
 def get_or_create_fcurve(action, bone_name, channel_i, axis_i, data_path):
     if bone_name not in action.groups:

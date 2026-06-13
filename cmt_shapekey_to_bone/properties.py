@@ -1,6 +1,15 @@
 import bpy
 from .utils import get_bone_items
 
+def poll_shape_key_action(self, action):
+    return any("key_blocks" in fc.data_path for fc in action.fcurves)
+
+class CMT_S2B_ShapeKeyAnimItem(bpy.types.PropertyGroup):
+    action: bpy.props.PointerProperty(
+        type=bpy.types.Action,
+        poll=poll_shape_key_action
+    )
+
 class CMT_S2B_Settings(bpy.types.PropertyGroup):
     AbandonmentRate : bpy.props.IntProperty(
         name="舍弃率（%）",
@@ -37,15 +46,15 @@ class CMT_S2B_Settings(bpy.types.PropertyGroup):
         min=0.0,
         max=1.0,
     )
-    UseExistAction : bpy.props.BoolProperty(
-        name="使用已存在的动作", description="", default=False
-    )
-    ActionName : bpy.props.StringProperty(
-        name="动作名", description=""
-    )
     MaxBones : bpy.props.IntProperty(
         name="骨骼数量限制",
         description="自动分割网格时的单个网格最大骨骼数量",
         default=256,
         min=0,
+    )
+    ShapeKeyAnimList : bpy.props.CollectionProperty(
+        type=CMT_S2B_ShapeKeyAnimItem
+    )
+    ShapeKeyAnimListIndex : bpy.props.IntProperty(
+        name="当前形态键索引", default=0
     )

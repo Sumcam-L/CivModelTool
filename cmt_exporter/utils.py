@@ -84,8 +84,22 @@ g_Texture_ExtraReferenceTable = {
 from NexusBuddy.FileOps import CN6FileOps,BoneData,AstInfo
 
 
+def get_geotype_items(self,context):
+    geoClasses = ["DecalGeometry","LandmarkModel","LandmarkObstructionProfile","Leader","Leader_ShadowVolume","UILensModel","Unit","VFXModel","WonderMovieModel"]
+    # geoClasses.sort()
+    items = []
+    for tClass in geoClasses:
+        items.append((tClass,tClass,""))
+    return items
 
 
+def get_anmtype_items(self,context):
+    anmClasses = ["CameraAnimation","Landmark","Leader","Unit","VFX","WonderMovie"]
+    # geoClasses.sort()
+    items = []
+    for tClass in anmClasses:
+        items.append((tClass,tClass,""))
+    return items
 
 def get_parent_armature(obj):
     """获取对象的父级骨架"""

@@ -21,7 +21,7 @@ class CMT_Exporter_PG_GeometryProperty(bpy.types.PropertyGroup):
 class CMT_Exporter_PG_GeometryList(bpy.types.PropertyGroup):
     FileName : bpy.props.StringProperty()
     Class : bpy.props.EnumProperty(
-        name="类型", description="类型",items=get_ast_class_items,translation_context = "CMT"
+        name="类型", description="类型",items=get_geotype_items,translation_context = "CMT",default=6
     )
     Geometries:bpy.props.CollectionProperty(type=CMT_Exporter_PG_GeometryProperty)
     ActivedPropertyIndex:bpy.props.IntProperty(default=0)
@@ -29,7 +29,7 @@ class CMT_Exporter_PG_GeometryList(bpy.types.PropertyGroup):
 class CMT_Exporter_PG_Animationlist(bpy.types.PropertyGroup):
     value:bpy.props.PointerProperty(
         type=bpy.types.Action,poll=animation_poll )
-    Class:bpy.props.EnumProperty(name="",description="类型",items=get_ast_class_items,translation_context = "CMT",default=0)
+    Class:bpy.props.EnumProperty(name="",description="类型",items=get_anmtype_items,translation_context = "CMT",default=3)
 
 class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
     
@@ -213,7 +213,7 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     IsGenerateRef : bpy.props.BoolProperty(
         name="引用文件设置", description="是否生成引用所导出资产的文件",default=False
     )
-    ModelType:bpy.props.EnumProperty(name="模型导出类型", translation_context = "CMT" ,description="模型导出类型",items=[("Unit","Unit",""),("Leader","Leader","")],default="Unit")
+    ModelType:bpy.props.EnumProperty(name="模型导出类型", translation_context = "CMT" ,description="模型导出类型",items=get_geotype_items,default=6)
     
     ##模型设置
     UVCount: bpy.props.IntProperty(
@@ -232,9 +232,9 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     GeoList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_GeometryList)
     
     GeoName : bpy.props.EnumProperty(name="文件名", description="文件名", translation_context="",items=get_geo_files,update = geo_filename_update)
-    GeoClass : bpy.props.EnumProperty(
-        name="类型", description="类型",items=get_ast_class_items,update = geo_class_update,translation_context = "CMT"
-    )
+    # GeoClass : bpy.props.EnumProperty(
+    #     name="类型", description="类型",items=get_geotype_items,update = geo_class_update,translation_context = "CMT",default=6
+    # )
     CurrentGeoIndex: bpy.props.IntProperty(default=0 )
     
     

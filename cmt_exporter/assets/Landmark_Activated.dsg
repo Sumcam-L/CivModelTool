@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<AssetObjects..DSGInstance>
+	<m_CookParams>
+		<m_Values/>
+	</m_CookParams>
+	<m_Version>
+		<major>1</major>
+		<minor>0</minor>
+		<build>0</build>
+		<revision>0</revision>
+	</m_Version>
+	<m_AnimationSlots>
+		<Element text="CONSTRUCTION_A"/>
+		<Element text="UNBUILT_A"/>
+		<Element text="WORKED_A"/>
+		<Element text="UNWORKED_A"/>
+		<Element text="PILLAGED_A"/>
+		<Element text="ACTIVATED_A"/>
+	</m_AnimationSlots>
+	<m_TimelineSlots>
+		<Element text="CONSTRUCTION_A"/>
+		<Element text="UNBUILT_A"/>
+		<Element text="WORKED_A"/>
+		<Element text="UNWORKED_A"/>
+		<Element text="PILLAGED_A"/>
+		<Element text="ACTIVATED_A"/>
+	</m_TimelineSlots>
+	<m_ClassName text="Landmark"/>
+	<m_DataFiles>
+		<Element>
+			<m_ID text="DSG"/>
+			<m_RelativePath text="Landmark_Activated.dsgxml"/>
+		</Element>
+	</m_DataFiles>
+	<m_Name text="Landmark_Activated"/>
+	<m_Description text=""/>
+	<m_Tags>
+		<Element text="Landmark"/>
+	</m_Tags>
+	<m_Groups/>
+</AssetObjects..DSGInstance>
+

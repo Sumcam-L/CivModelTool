@@ -5,7 +5,7 @@ bl_info = {
     "name": "Civ6ModelTool",
     "author": "Sumcam",
     "version": (1, 0, 0),
-    "blender": (5, 1, 0),
+    "blender": (5, 2, 0),
     "location": "View3D > Sidebar > Civ6ModelTool",
     "category": "Object",
 }
@@ -46,9 +46,9 @@ def register() -> None:
     try:
         ##注册子包
         cmt_updater.register()
-        cmt_shapekey_to_bone.register()
         cmt_ordinary_tool.register()
         cmt_exporter.register()
+        cmt_shapekey_to_bone.register()
         ##注册插件基本类
         bpy.utils.register_class(Civ6ModelTool)
         bpy.types.Scene.CMT = bpy.props.PointerProperty(type=Civ6ModelTool)

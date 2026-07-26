@@ -3,7 +3,7 @@ from .utils import g_DSGs_action
 from .properties import CMT_Exporter_Settings,CMT_Exporter_PG_AstAnimationProperty
 
 class CMT_Exporter_PT_Panel(bpy.types.Panel):
-    bl_label = "导出fgx"
+    bl_label = "导出"
     bl_idname = "CMT_Exporter_PT_Panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

@@ -1,25 +1,88 @@
 {
-    "Classes":[
+    "Classes": [
+        "CityBlock",
+        "Clutter",
+        "FireFX",
+        "Landmark",
+        "Leader",
+        "RouteDoodad",
+        "StrategicView_DirectedAsset",
+        "StrategicView_Route",
+        "StrategicView_TerrainBlend",
+        "StrategicView_TerrainBlendCorners",
+        "TerrainElementAsset",
+        "TileBase",
+        "UILensAsset",
         "Unit",
-        "Leader"
+        "VFX",
+        "WonderMovie"
     ],
-    "Unit":[
-        "potential_any_graph",
+    "CityBlock": [
+        "Landmark_Activated",
+        "Landmark_WaterMill",
+        "Standard_Landmark",
+        "Standard_LandmarkNoRandomOffset"
+    ],
+    "Clutter": [
+        "Standard_Clutter",
+        "Standard_Clutter_Activated",
+        "Standard_TerrainElementAsset"
+    ],
+    "FireFX": [
+        "Standard_VFX",
+        "Standard_VFX_RandomOffset"
+    ],
+    "Landmark": [
+        "Landmark_Activated",
+        "Landmark_WaterMill",
+        "Standard_Landmark",
+        "Standard_LandmarkNoRandomOffset"
+    ],
+    "Leader": [
+        "Standard_Leader",
+        "Standard_LeaderBackground",
+        "Standard_Leader_No_Unhappy_Blend"
+    ],
+    "RouteDoodad": [
+        "Landmark_Activated",
+        "Landmark_WaterMill",
+        "Standard_Landmark",
+        "Standard_LandmarkNoRandomOffset"
+    ],
+    "StrategicView_DirectedAsset": [],
+    "StrategicView_Route": [],
+    "StrategicView_TerrainBlend": [],
+    "StrategicView_TerrainBlendCorners": [],
+    "TerrainElementAsset": [
+        "Standard_TerrainElementAsset"
+    ],
+    "TileBase": [
+        "Landmark_Activated",
+        "Landmark_WaterMill",
+        "Standard_Landmark",
+        "Standard_LandmarkNoRandomOffset"
+    ],
+    "UILensAsset": [],
+    "Unit": [
         "Standard_Biped",
         "Standard_Broadside",
         "Standard_CannonBlast",
         "Standard_Dog",
         "Standard_GunMuzzleFlash",
+        "Standard_Leader",
+        "Standard_Leader_No_Unhappy_Blend",
         "Standard_Naval",
         "Standard_NonCombat",
         "Standard_NonCombatNaval",
-        "Standard_SwordTrail"
+        "Standard_SwordTrail",
+        "potential_any_graph"
     ],
-    "Leader":[
-        "Standard_Leader",
-        "Standard_Leader_No_Unhappy_Blend",
-        "Standard_LeaderBackground"
+    "VFX": [
+        "Standard_VFX",
+        "Standard_VFX_RandomOffset"
+    ],
+    "WonderMovie": [
+        "Standard_Landmark",
+        "Standard_WonderMovie"
     ]
-        
-    
 }

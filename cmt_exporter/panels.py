@@ -1,6 +1,7 @@
 import bpy
 from .utils import g_DSGs_action
-from .properties import CMT_Exporter_Settings,CMT_Exporter_PG_AstAnimationProperty
+from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
+from .properties import CMT_Exporter_Settings,CMT_Exporter_PG_AstAnimationProperty,CMT_Exporter_PG_AstGeometryProperty
 
 class CMT_Exporter_PT_Panel(bpy.types.Panel):
     bl_label = "导出"
@@ -199,10 +200,6 @@ class CMT_Exporter_UL_AnimationList(bpy.types.UIList):
 
 class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
-        # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-        # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
-        # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-        # Note "data" names should never be translated!
         row = layout.row()
 
         split = row.split(factor=0.4 )
@@ -211,6 +208,38 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
         else:
             split.label(text="   "+ str(index+1))
         split.prop(item,"value",text="")
+
+        invalid = False
+        hint = ""
+        settings = context.scene.CMT.ExporterSettings
+        curAst = data
+
+        if type(item) == CMT_Exporter_PG_AstGeometryProperty:
+            geoClass = None
+            for geo in settings.GeoList:
+                if geo.FileName == item.value:
+                    geoClass = geo.Class
+                    break
+            allowed = get_allowed_geo_classes(curAst.Class)
+            if geoClass and geoClass not in allowed:
+                invalid = True
+                hint = f"类型 {geoClass} 不被允许"
+
+        elif type(item) == CMT_Exporter_PG_AstAnimationProperty:
+            anmClass = None
+            if item.value:
+                for anm in settings.AnimationList:
+                    if anm.value is item.value:
+                        anmClass = anm.Class
+                        break
+            allowed = get_allowed_anm_classes(curAst.Class)
+            if anmClass and anmClass not in allowed:
+                invalid = True
+                hint = f"类型 {anmClass} 不被允许"
+
+        if invalid:
+            row = layout.row()
+            row.label(text=hint, icon='ERROR')
         
 class CMT_Exporter_UL_TextureList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):

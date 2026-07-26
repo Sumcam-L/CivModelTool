@@ -1,0 +1,18 @@
+{
+  "Leader":         {"geo": ["Leader", "Leader_ShadowVolume"], "anm": ["Leader"]},
+  "Unit":           {"geo": ["Unit"],                         "anm": ["Unit"]},
+  "Landmark":       {"geo": ["DecalGeometry", "LandmarkModel", "LandmarkObstructionProfile"], "anm": ["Landmark"]},
+  "Clutter":        {"geo": ["DecalGeometry", "LandmarkModel"], "anm": ["Landmark"]},
+  "CityBlock":      {"geo": ["DecalGeometry", "LandmarkModel"], "anm": ["Landmark"]},
+  "TileBase":       {"geo": ["DecalGeometry", "LandmarkModel", "LandmarkObstructionProfile"], "anm": ["Landmark"]},
+  "TerrainElementAsset": {"geo": ["DecalGeometry", "LandmarkModel"], "anm": ["Landmark"]},
+  "RouteDoodad":   {"geo": ["DecalGeometry", "LandmarkModel", "LandmarkObstructionProfile"], "anm": ["Landmark"]},
+  "VFX":            {"geo": ["VFXModel"],                     "anm": ["VFX"]},
+  "FireFX":         {"geo": ["FireFXModel"],                  "anm": ["VFX"]},
+  "WonderMovie":    {"geo": ["DecalGeometry", "WonderMovieModel", "WonderMovieCamera", "LandmarkObstructionProfile"], "anm": ["WonderMovie"]},
+  "UILensAsset":    {"geo": ["UILensModel"],                  "anm": []},
+  "StrategicView_TerrainBlend":        {"geo": [], "anm": []},
+  "StrategicView_TerrainBlendCorners": {"geo": [], "anm": []},
+  "StrategicView_Route":               {"geo": [], "anm": []},
+  "StrategicView_DirectedAsset":       {"geo": [], "anm": []}
+}

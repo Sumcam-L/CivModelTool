@@ -3,6 +3,7 @@ from .utils import *
 import os
 import clr
 from .properties import CMT_Exporter_Settings
+from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .io_export_cn6 import *
 import tempfile
 from System.Collections.Generic import List
@@ -233,9 +234,54 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     fill_untis(self,pNode,dom,inst.Type,inst.Type)
                     
                     save_xml(dom,artdeftemplate_path)
-                        
+
+    def validate_ast_references(self, data: CMT_Exporter_Settings):
+        errors = []
+        for ast in data.AstList:
+            allowed_geo = get_allowed_geo_classes(ast.Class)
+            allowed_anm = get_allowed_anm_classes(ast.Class)
+
+            for geo_ref in ast.Geometries:
+                geoClass = None
+                for geo in data.GeoList:
+                    if geo.FileName == geo_ref.value:
+                        geoClass = geo.Class
+                        break
+                if geoClass and geoClass not in allowed_geo:
+                    errors.append(
+                        f"Ast [{ast.FileName}] 模型引用 [{geo_ref.value}] "
+                        f"类型 {geoClass} 不被允许 (允许: {', '.join(allowed_geo) or '无'})"
+                    )
+
+            for anm_ref in ast.Animations:
+                if not anm_ref.value:
+                    continue
+                anmClass = None
+                for anm in data.AnimationList:
+                    if anm.value is anm_ref.value:
+                        anmClass = anm.Class
+                        break
+                if anmClass and anmClass not in allowed_anm:
+                    errors.append(
+                        f"Ast [{ast.FileName}] 动画引用 [{anm_ref.text}] "
+                        f"类型 {anmClass} 不被允许 (允许: {', '.join(allowed_anm) or '无'})"
+                    )
+        return errors
+
+    def show_validation_errors(self, context, errors):
+        def draw(self, context):
+            for err in errors:
+                self.layout.label(text=err, icon='ERROR')
+        context.window_manager.popup_menu(draw, title="Ast 引用类型不匹配，导出已中止", icon='ERROR')
+
     def execute(self, context : bpy.types.Context):
         data : CMT_Exporter_Settings = context.scene.CMT.ExporterSettings
+
+        if data.IsGenerateRef and data.IsExportAst:
+            errors = self.validate_ast_references(data)
+            if errors:
+                self.show_validation_errors(context, errors)
+                return {"CANCELLED"}
 
         if data.IsExportModel:
             self.export_models(context,data)

@@ -7,6 +7,27 @@ import bmesh
 import time
 from collections import deque
 
+def remove_empty_vertex_groups(obj):
+
+    vertex_groups = obj.vertex_groups
+    groups = {r: None for r in range(len(vertex_groups))}
+    armature = obj.parent
+    for vert in obj.data.vertices:
+        for vg in vert.groups:
+            i = vg.group
+            if i in groups:
+                del groups[i]
+
+    lis = [k for k in groups]
+    lis.sort(reverse=True)
+    for i in lis:
+        if (
+            True
+            if bpy.context.scene.CMT.OTSettings.DeleteLockGroup
+            else not vertex_groups[i].lock_weight
+        ):
+            vertex_groups.remove(vertex_groups[i])
+
 
 def get_bone_items(self, context):
     items = []
@@ -78,9 +99,11 @@ def get_or_create_fcurve(action, bone_name, channel_i, axis_i, data_path):
 def changeNormal(obj, normals):
     bpy.context.view_layer.objects.active = obj
     mesh = obj.data
-    bpy.ops.object.mode_set(mode="OBJECT")
-    mesh.use_auto_smooth = True
-    mesh.calc_normals_split()
+    current_mode = bpy.context.mode
+    if current_mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode="OBJECT")
+    # mesh.use_auto_smooth = True
+    # mesh.calc_normals_split()
 
     loop_normals = [loop.normal.copy() for loop in mesh.loops]
 
@@ -131,6 +154,17 @@ def round_vector(vector, decimals=4):
     """将向量四舍五入为元组，用作字典键"""
     return tuple(round(component, decimals) for component in vector)
 
+def remove_unused_materials_data(obj):
+    mesh = obj.data
+
+    used = set()
+    for poly in mesh.polygons:
+        used.add(poly.material_index)
+
+    for i in reversed(range(len(obj.material_slots))):
+        if i not in used:
+            obj.active_material_index = i
+            bpy.ops.object.material_slot_remove()
 
 def separateSelectedPart(normals):
     bpy.ops.object.mode_set(mode="EDIT")
@@ -148,12 +182,14 @@ def separateSelectedPart(normals):
     bpy.ops.object.mode_set(mode="OBJECT")
 
     for obj1 in non_active_selected_objects:
+    # 先设置上下文
         bpy.context.view_layer.objects.active = obj1
-        # active_object.select = False
+        obj1.select_set(True)
+        
+
         changeNormal(obj1, normals)
         remove_empty_vertex_groups(obj1)
-        bpy.ops.object.material_slot_remove_unused()
-        # obj1.select = False
+        remove_unused_materials_data(obj1)
 
     bpy.context.view_layer.objects.active = active_object
     changeNormal(active_object, normals)

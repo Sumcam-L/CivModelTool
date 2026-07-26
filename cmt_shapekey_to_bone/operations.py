@@ -388,7 +388,8 @@ class CMT_S2B_OT_ClearShapeKey(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        obj = bpy.context.scene.ShapeKeyToBone_TargetMesh
+        settings = context.scene.CMT.S2BSettings
+        obj = settings.TargetMesh
         shape_keys = obj.data.shape_keys
         if shape_keys:
             if shape_keys.animation_data and shape_keys.animation_data.action:
@@ -406,7 +407,7 @@ class CMT_S2B_OT_EditSeparateMesh(bpy.types.Operator):
 
     def execute(self, context):
 
-        # obj = bpy.context.scene.ShapeKeyToBone_TargetMesh
+
         obj = bpy.context.active_object
 
         if obj == None:
@@ -416,8 +417,8 @@ class CMT_S2B_OT_EditSeparateMesh(bpy.types.Operator):
         normals = {}
         bpy.ops.object.mode_set(mode="OBJECT")  # 确保在对象模式
 
-        obj.data.use_auto_smooth = True  # 启用自动平滑
-        obj.data.calc_normals_split()  # 计算默认法线
+        # obj.data.use_auto_smooth = True  # 启用自动平滑
+        # obj.data.calc_normals_split()  # 计算默认法线
 
         for polyIndex, poly in enumerate(obj.data.polygons):
             center = tuple(round(c, 6) for c in poly.center)
@@ -443,9 +444,10 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.object.mode_set(mode="EDIT")
-        obj = context.scene.ShapeKeyToBone_TargetMesh
-        arm = context.scene.ShapeKeyToBone_CurrentArmature
-        max_bones = context.scene.S2B_MaxBones
+        settings = context.scene.CMT.S2BSettings
+        obj = settings.TargetMesh
+        arm = settings.CurrentArmature
+        max_bones = settings.MaxBones
         bone_names = [b.name for b in arm.data.bones]
 
         mesh = obj.data
@@ -497,8 +499,7 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                     v_bones = {
                         obj.vertex_groups[g.group].name: 1
                         for g in verts[vid].groups
-                        if obj.vertex_groups[g.group].name in bone_names
-                        and obj.vertex_groups[g.group].name not in bones
+                        if obj.vertex_groups[g.group].name not in bones
                     }
                     if len(bones) + len(v_bones) > max_bones:
                         needBreak = True
@@ -529,8 +530,7 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                     v_bones = {
                         obj.vertex_groups[g.group].name: 1
                         for g in verts[vid].groups
-                        if obj.vertex_groups[g.group].name in bone_names
-                        and obj.vertex_groups[g.group].name not in bones
+                        if obj.vertex_groups[g.group].name not in bones
                     }
                     bones.update(v_bones)
             print(index, len(part[0]), len(part[1]), len(bones))
@@ -538,8 +538,8 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
         normals = {}
         bpy.ops.object.mode_set(mode="OBJECT")  # 确保在对象模式
         bpy.ops.object.select_all(action="DESELECT")
-        obj.data.use_auto_smooth = True  # 启用自动平滑
-        obj.data.calc_normals_split()  # 计算默认法线
+        # obj.data.use_auto_smooth = True  # 启用自动平滑 4.1版本移出，自动使用自定义法线
+        # obj.data.calc_normals_split()  # 计算默认法线,4.1版本移出，自动计算
 
         for polyIndex, poly in enumerate(obj.data.polygons):
             center = tuple(round(c, 6) for c in poly.center)
@@ -553,32 +553,45 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                 loop = obj.data.loops[li]
                 normals[key].append(loop.normal.copy())
 
+        import bmesh
+
         for index, part in enumerate(groups):
             groupName = "AutoSeparatePart" + str(index)
-            vg = obj.vertex_groups.get(groupName)  # 获取已有顶点组
+            vg = obj.vertex_groups.get(groupName)
             if vg is None:
-                vg = obj.vertex_groups.new(name=groupName)  # 创建顶点组
+                vg = obj.vertex_groups.new(name=groupName)
 
             vertList = []
             for pId in part[0]:
                 for v1 in polys[pId].vertices:
                     vertList.append(v1)
 
-            vg.add(vertList, 1.0, "REPLACE")  # 1.0 是权重
+            vg.add(vertList, 1.0, "REPLACE")
 
         index1 = 0
         while index1 < len(groups):
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.select_all(action="DESELECT")
-            # bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type="FACE")
             obj.vertex_groups.active = obj.vertex_groups[
                 "AutoSeparatePart" + str(index1)
             ]
             bpy.ops.object.vertex_group_select()
+
+            bm = bmesh.from_edit_mesh(obj.data)
+            bm.faces.ensure_lookup_table()
+            for face in bm.faces:
+                if face.select and not all(v.select for v in face.verts):
+                    face.select = False
+            bmesh.update_edit_mesh(obj.data)
+
+            has_selected = any(f.select for f in bm.faces)
+
             vg = obj.vertex_groups.get("AutoSeparatePart" + str(index1))
             obj.vertex_groups.remove(vg)
-            separateSelectedPart(normals)
+
+            if has_selected:
+                separateSelectedPart(normals)
 
             index1 += 1
         return {"FINISHED"}

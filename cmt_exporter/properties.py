@@ -1,5 +1,6 @@
 import bpy
 from .utils import *
+from .allowed_classes import get_allowed_anm_classes
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings
@@ -146,9 +147,12 @@ def astgeometry_poll(self,obj):
 
 def astanimation_poll(self,obj):
     data = bpy.context.scene.CMT.ExporterSettings
+    curAst = data.AstList[data.CurrentAstIndex]
+    allowed = get_allowed_anm_classes(curAst.Class)
     for anm in data.AnimationList:
         if anm.value is obj:
-            return True       
+            if anm.Class in allowed:
+                return True
     return False
 
 class CMT_Exporter_PG_ArtdefInstance(bpy.types.PropertyGroup):

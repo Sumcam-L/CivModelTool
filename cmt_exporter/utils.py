@@ -11,6 +11,8 @@ import xml.dom.minidom
 import re
 import sys
 
+from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
+
 # 添加依赖库路径到sys.path
 libs_path = os.path.join(os.path.dirname(__file__), "libs")
 if libs_path not in sys.path:
@@ -155,10 +157,12 @@ def get_ast_files(self,context):
 
 def get_astgeometries_items(self,context):
     data = context.scene.CMT.ExporterSettings
+    curAst = data.AstList[data.CurrentAstIndex]
+    allowed = get_allowed_geo_classes(curAst.Class)
     items = []
-    # ("None", "None", "")
     for property in data.GeoList:
-        items.append((property.FileName, property.FileName, ""))
+        if property.Class in allowed:
+            items.append((property.FileName, property.FileName, ""))
     return items
 
 

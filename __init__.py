@@ -31,6 +31,7 @@ import bpy
 from . import cmt_shapekey_to_bone
 from . import cmt_ordinary_tool
 from . import cmt_exporter
+from . import cmt_updater
 
 from .cmt_translations import cmt_translations_dict
 
@@ -44,6 +45,7 @@ def register() -> None:
     # 只要内存里有这个包，就说明“加载过”或者“上次坏掉了”
     try:
         ##注册子包
+        cmt_updater.register()
         cmt_shapekey_to_bone.register()
         cmt_ordinary_tool.register()
         cmt_exporter.register()
@@ -70,6 +72,7 @@ def unregister() -> None:
     cmt_ordinary_tool.unregister()
     cmt_shapekey_to_bone.unregister()
     cmt_exporter.unregister()
+    cmt_updater.unregister()
     
     bpy.app.translations.unregister(__name__)
     

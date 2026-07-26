@@ -163,6 +163,13 @@ def get_astgeometries_items(self,context):
     for property in data.GeoList:
         if property.Class in allowed:
             items.append((property.FileName, property.FileName, ""))
+    if self.value and not any(item[0] == self.value for item in items):
+        for geo in data.GeoList:
+            if geo.FileName == self.value:
+                items.append((self.value, self.value + " (不被允许)", ""))
+                break
+    if not items:
+        items.append(("", "无可用模型", ""))
     return items
 
 

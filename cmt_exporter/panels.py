@@ -137,7 +137,7 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             matCol = col.column()
             if data.IsExportMaterial:
                 matCol.prop(data,"MaterialName") 
-                if data.MaterialName:
+                if data.MaterialName and data.CurrentMatIndex < len(data.MaterialList):
                         curMat = data.MaterialList[data.CurrentMatIndex]
                         
                         matCol.prop(curMat,"Class")

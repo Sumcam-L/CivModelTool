@@ -238,14 +238,15 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
     def validate_ast_references(self, data: CMT_Exporter_Settings):
         errors = []
         for ast in data.AstList:
-            allowed_geo = get_allowed_geo_classes(ast.Class)
-            allowed_anm = get_allowed_anm_classes(ast.Class)
+            ast_class = ast["Class"]
+            allowed_geo = get_allowed_geo_classes(ast_class)
+            allowed_anm = get_allowed_anm_classes(ast_class)
 
             for geo_ref in ast.Geometries:
                 geoClass = None
                 for geo in data.GeoList:
                     if geo.FileName == geo_ref.value:
-                        geoClass = geo.Class
+                        geoClass = geo["Class"]
                         break
                 if geoClass and geoClass not in allowed_geo:
                     errors.append(
@@ -259,7 +260,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                 anmClass = None
                 for anm in data.AnimationList:
                     if anm.value is anm_ref.value:
-                        anmClass = anm.Class
+                        anmClass = anm["Class"]
                         break
                 if anmClass and anmClass not in allowed_anm:
                     errors.append(

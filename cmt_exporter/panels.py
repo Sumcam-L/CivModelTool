@@ -218,9 +218,9 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
             geoClass = None
             for geo in settings.GeoList:
                 if geo.FileName == item.value:
-                    geoClass = geo.Class
+                    geoClass = geo["Class"]
                     break
-            allowed = get_allowed_geo_classes(curAst.Class)
+            allowed = get_allowed_geo_classes(curAst["Class"])
             if geoClass and geoClass not in allowed:
                 invalid = True
                 hint = f"类型 {geoClass} 不被允许"
@@ -230,9 +230,9 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
             if item.value:
                 for anm in settings.AnimationList:
                     if anm.value is item.value:
-                        anmClass = anm.Class
+                        anmClass = anm["Class"]
                         break
-            allowed = get_allowed_anm_classes(curAst.Class)
+            allowed = get_allowed_anm_classes(curAst["Class"])
             if anmClass and anmClass not in allowed:
                 invalid = True
                 hint = f"类型 {anmClass} 不被允许"

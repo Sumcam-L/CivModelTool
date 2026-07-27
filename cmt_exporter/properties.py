@@ -148,10 +148,10 @@ def astgeometry_poll(self,obj):
 def astanimation_poll(self,obj):
     data = bpy.context.scene.CMT.ExporterSettings
     curAst = data.AstList[data.CurrentAstIndex]
-    allowed = get_allowed_anm_classes(curAst.Class)
+    allowed = get_allowed_anm_classes(curAst["Class"])
     for anm in data.AnimationList:
         if anm.value is obj:
-            if anm.Class in allowed:
+            if anm["Class"] in allowed:
                 return True
     return False
 

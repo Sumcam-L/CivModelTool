@@ -160,15 +160,12 @@ def get_astgeometries_items(self,context):
     if len(data.AstList) == 0:
         return [("", "无可用模型", "")]
     curAst = data.AstList[data.CurrentAstIndex]
-    allowed = get_allowed_geo_classes(curAst.Class)
+    ast_class = curAst["Class"]
+    allowed = get_allowed_geo_classes(ast_class)
     items = []
     for property in data.GeoList:
-        if property.Class in allowed:
+        if property["Class"] in allowed:
             items.append((property.FileName, property.FileName, ""))
-    if self.value and not any(item[0] == self.value for item in items):
-        geo_names = {g.FileName for g in data.GeoList}
-        display = self.value + " (不被允许)" if self.value in geo_names else str(self.value)
-        items.append((self.value, display, ""))
     if not items:
         items.append(("", "无可用模型", ""))
     return items

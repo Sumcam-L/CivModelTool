@@ -157,8 +157,10 @@ def get_ast_files(self,context):
 
 def resolve_enum(prop_group, prop_name, items_func):
     try:
+        print(prop_name,prop_name in prop_group)
         raw = prop_group[prop_name]
     except KeyError:
+        print("error")
         raw = prop_group.bl_rna.properties[prop_name].default
     if isinstance(raw, str):
         return raw
@@ -177,7 +179,9 @@ def get_astgeometries_items(self,context):
     allowed = get_allowed_geo_classes(ast_class)
     items = []
     for property in data.GeoList:
+        print(property,property.Class)
         geo_class = resolve_enum(property, "Class", get_geotype_items)
+        print(111,geo_class)
         if geo_class in allowed:
             items.append((property.FileName, property.FileName, ""))
     if not items:

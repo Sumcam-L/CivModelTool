@@ -84,7 +84,7 @@ class CMT_Exporter_PG_GeometryProperty(bpy.types.PropertyGroup):
 class CMT_Exporter_PG_GeometryList(bpy.types.PropertyGroup):
     FileName : bpy.props.StringProperty()
     Class : bpy.props.EnumProperty(
-        name="类型", description="类型",items=get_geotype_items,translation_context = "CMT",default=6,
+        name="类型", description="类型",items=get_geotype_items,translation_context = "CMT",default=0,
         update=geo_class_changed
     )
     Geometries:bpy.props.CollectionProperty(type=CMT_Exporter_PG_GeometryProperty)

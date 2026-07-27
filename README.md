@@ -4,16 +4,16 @@
 
 ## 环境要求
 
-- **Blender 5.2** 或更高版本
+- **Blender 5.0** 或更高版本
 - **Windows** 系统（依赖 .NET Framework）
 - **.NET Framework 4.0+**
-- **文明6 AssetEditor**：需至少运行一次以创建资产文件夹结构
+- **文明6 AssetEditor**：Mod项目需至少运行一次以创建资产文件夹结构
 
 ## 安装步骤
 
-1. 将 `CivModelTool` 文件夹放入 Blender 的 `scripts/addons/` 目录
+1. 下载插件压缩包
 2. 打开 Blender，进入 `编辑 > 偏好设置 > 插件`
-3. 搜索 `Civ6ModelTool` 并勾选启用
+3. 点击安装插件，选择插件压缩包安装
 4. 在 3D 视图中按 `N` 键打开侧栏，选择 `Civ6ModelTool` 分类
 
 ## 使用文档

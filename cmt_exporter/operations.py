@@ -2,7 +2,7 @@ import bpy
 from .utils import *
 import os
 import clr
-from .properties import CMT_Exporter_Settings
+from .properties import CMT_Exporter_Settings, _report
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 from .io_export_cn6 import *
@@ -362,7 +362,17 @@ class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         geoList = data.GeoList
+        geoFileName = geoList[data.CurrentGeoIndex].FileName
         geoList.remove(data.CurrentGeoIndex)
+        for ast in data.AstList:
+            to_remove = []
+            for i, geo_ref in enumerate(ast.Geometries):
+                if geo_ref.value == geoFileName:
+                    to_remove.append(i)
+            for i in reversed(to_remove):
+                ast.Geometries.remove(i)
+            if to_remove:
+                _report(f"已删除 Ast [{ast.FileName}] 中对模型 [{geoFileName}] 的引用")
         if data.CurrentGeoIndex >= len(geoList) and len(geoList) > 0:
             data.CurrentGeoIndex = len(geoList) - 1
             data.GeoName = geoList[data.CurrentGeoIndex].FileName

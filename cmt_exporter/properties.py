@@ -3,6 +3,29 @@ from .utils import *
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 
+
+class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
+    bl_idname = "cmt.exporter_ot_reportwarning"
+    bl_label = "Report Warning"
+    bl_description = "Report a warning message"
+    bl_options = {'INTERNAL', 'REGISTER'}
+
+    message: bpy.props.StringProperty()
+
+    def execute(self, context):
+        if self.message:
+            self.report({'WARNING'}, self.message)
+        return {"FINISHED"}
+
+
+def _deferred_report(msg):
+    try:
+        bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
+    except Exception:
+        pass
+    return None
+
+
 def geo_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
     newClass = resolve_enum(self, "Class", get_geotype_items)
@@ -15,11 +38,9 @@ def geo_class_changed(self, context):
         if newClass not in allowed:
             affected.append(ast.FileName)
     if affected:
-        context.workspace.status_text_set(
-            f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        )
-    else:
-        context.workspace.status_text_set(None)
+        msg = f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_execution=0.0)
+
 
 def anm_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
@@ -33,11 +54,8 @@ def anm_class_changed(self, context):
         if newClass not in allowed:
             affected.append(ast.FileName)
     if affected:
-        context.workspace.status_text_set(
-            f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        )
-    else:
-        context.workspace.status_text_set(None)
+        msg = f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_execution=0.0)
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

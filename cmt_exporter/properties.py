@@ -8,7 +8,7 @@ class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_reportwarning"
     bl_label = "Report Warning"
     bl_description = "Report a warning message"
-    bl_options = {'INTERNAL', 'REGISTER'}
+    bl_options = {'REGISTER'}
 
     message: bpy.props.StringProperty()
 

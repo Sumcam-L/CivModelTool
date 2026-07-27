@@ -18,10 +18,11 @@ class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
 
 
 def _report(msg):
+    print(f"WARNING: {msg}")
     try:
         bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"report operator failed: {e}")
 
 
 def geo_class_changed(self, context):

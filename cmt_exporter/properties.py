@@ -39,7 +39,7 @@ def geo_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_report(msg), first_execution=0.0)
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
 
 
 def anm_class_changed(self, context):
@@ -55,7 +55,7 @@ def anm_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_report(msg), first_execution=0.0)
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

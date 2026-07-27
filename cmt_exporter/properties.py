@@ -42,7 +42,10 @@ def geo_class_changed(self, context):
                     ast_items.append(property.FileName)
             to_remove = []
             for i, geo_ref in enumerate(ast.Geometries):
-                raw = geo_ref["value"]
+                try:
+                    raw = geo_ref["value"]
+                except KeyError:
+                    continue
                 ref_name = ""
                 if isinstance(raw, int) and 0 <= raw < len(ast_items):
                     ref_name = ast_items[raw]

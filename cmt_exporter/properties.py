@@ -169,6 +169,8 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
             matched = fuzzy_match_material_class(parentClass)
             if matched:
                 self.Class = matched
+            else:
+                self.Class = "Unit"
     def mat_class_update(self,context):
         self.Textures.clear()
         for key,v in g_Mat_json[self.Class].items():

@@ -423,8 +423,15 @@ class CMT_Exporter_OT_AddAnimation(bpy.types.Operator):
     bl_description ="添加动画"
 
     def execute(self, context : bpy.types.Context):
-        animationList  = context.scene.CMT.ExporterSettings.AnimationList
+        data = context.scene.CMT.ExporterSettings
+        animationList  = data.AnimationList
         item = animationList.add()
+        if len(data.AstList) > 0:
+            curAst = data.AstList[data.CurrentAstIndex]
+            ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
+            allowed = get_allowed_anm_classes(ast_class)
+            if allowed:
+                item.Class = allowed[0]
 
         return {"FINISHED"}
     
@@ -447,11 +454,21 @@ class CMT_Exporter_OT_AddActionsByKeyword(bpy.types.Operator):
         data = context.scene.CMT.ExporterSettings
         keyword = data.ActionNameToAdd
         animationList = data.AnimationList
+        if len(data.AstList) > 0:
+            curAst = data.AstList[data.CurrentAstIndex]
+            ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
+            allowed = get_allowed_anm_classes(ast_class)
+            default_class = allowed[0] if allowed else None
+        else:
+            default_class = None
         if keyword != "":
             for action in bpy.data.actions:
                 if keyword in action.name:
                     if not any( action  is anm.value for anm in data.AnimationList):
-                        animationList.add().value = action
+                        item = animationList.add()
+                        item.value = action
+                        if default_class:
+                            item.Class = default_class
         return {"FINISHED"}
     
 class CMT_Exporter_OT_AddAst(bpy.types.Operator):

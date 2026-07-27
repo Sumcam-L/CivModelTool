@@ -132,6 +132,7 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                     sidebar.operator("cmt.exporter_ot_removeref", text="", icon="REMOVE")
                     if propName == "Animations":
                         sidebar.enabled = False
+                        astCol.operator("cmt.exporter_ot_matchanimations", text="一键匹配动画", icon="ACTION")
                     # col.separator()
                     
             col.prop(data,"IsExportMaterial",icon="MATERIAL")

@@ -582,3 +582,28 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
         
         return {"FINISHED"}
 
+
+class CMT_Exporter_OT_MatchAnimations(bpy.types.Operator):
+    bl_idname = "cmt.exporter_ot_matchanimations"
+    bl_label = ""
+    bl_description = "根据Ast名称和动画槽位名称自动匹配动画"
+
+    def execute(self, context: bpy.types.Context):
+        data = context.scene.CMT.ExporterSettings
+        curAst = data.AstList[data.CurrentAstIndex]
+        astName = curAst.FileName.lower()
+        matched = 0
+        for anm in curAst.Animations:
+            for action in bpy.data.actions:
+                actionName = action.name.lower()
+                if (astName + "_") in actionName:
+                    if actionName.replace(astName + "_", "") in anm.text.lower():
+                        anm.value = action
+                        matched += 1
+                        break
+        if matched:
+            self.report({'INFO'}, f"已匹配 {matched} 个动画")
+        else:
+            self.report({'WARNING'}, "未找到匹配的动画")
+        return {"FINISHED"}
+

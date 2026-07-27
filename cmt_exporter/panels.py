@@ -138,7 +138,11 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             col.prop(data,"IsExportMaterial",icon="MATERIAL")
             matCol = col.column()
             if data.IsExportMaterial:
-                matCol.prop(data,"MaterialName") 
+                has_geo = len(data.AstList) > 0 and len(data.AstList[data.CurrentAstIndex].Geometries) > 0
+                if not has_geo:
+                    matCol.label(text="当前ast未引用模型", icon="ERROR")
+                else:
+                    matCol.prop(data,"MaterialName")
                 if data.MaterialName and data.CurrentMatIndex < len(data.MaterialList):
                         curMat = data.MaterialList[data.CurrentMatIndex]
                         

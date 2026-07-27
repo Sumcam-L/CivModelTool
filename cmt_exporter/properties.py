@@ -251,10 +251,19 @@ class CMT_Exporter_PG_AstAnimationProperty(bpy.types.PropertyGroup):
     text:bpy.props.StringProperty(update=anim_text_update)
     value:bpy.props.PointerProperty(type=bpy.types.Action,poll=astanimation_poll)
 
+def ast_class_update_dsg(self, context):
+    ast_class = resolve_enum(self, "Class", get_ast_class_items)
+    dsgs = g_DSG_json.get(ast_class, [])
+    if dsgs:
+        self.DSG = dsgs[0]
+    else:
+        self.Animations.clear()
+
+
 class CMT_Exporter_PG_Ast(bpy.types.PropertyGroup):
     FileName : bpy.props.StringProperty()
     # Class : bpy.props.StringProperty(default="Unit")
-    Class : bpy.props.EnumProperty(name="类型", description="类型", translation_context = "CMT",items=get_ast_class_items)
+    Class : bpy.props.EnumProperty(name="类型", description="类型", translation_context = "CMT",items=get_ast_class_items,update=ast_class_update_dsg)
     DSG : bpy.props.EnumProperty(name="DSG", description="DSG", translation_context="", items=get_ast_DSG_items,update=ast_dsg_update)
     # DSG : bpy.props.StringProperty(default="potential_any_graph")
     Geometries:bpy.props.CollectionProperty(type=CMT_Exporter_PG_AstGeometryProperty)

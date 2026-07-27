@@ -143,23 +143,23 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                     matCol.label(text="当前ast未引用模型", icon="ERROR")
                 else:
                     matCol.prop(data,"MaterialName")
-                if data.MaterialName and data.CurrentMatIndex < len(data.MaterialList):
-                        curMat = data.MaterialList[data.CurrentMatIndex]
-                        
-                        matCol.prop(curMat,"Class")
-                        
-                        matCol.template_list("CMT_Exporter_UL_TextureList", "", curMat, "Textures", curMat,  "ActivedPropertyIndex",maxrows=10)
-                        
-                scriptCol = col.column()
-                scriptCol.prop(data,"MaterialKeywords")
-                batchModifyRow = scriptCol.row()
-                batchModifyRow.prop(data,"MaterialTargetClass")
-                batchModifyRow.operator("cmt.exporter_ot_modifymattypebykeywords",text="按关键字修改材质类型")
-                
-                scriptCol.prop(data,"TextureCompressionRate")
-                scriptCol.prop(data,"TexEmbededExportScript")
-                scriptCol.prop(data,"TexCustomExportScript")
-                scriptCol.enabled = data.IsExportMaterial
+                    if data.MaterialName and data.CurrentMatIndex < len(data.MaterialList):
+                            curMat = data.MaterialList[data.CurrentMatIndex]
+
+                            matCol.prop(curMat,"Class")
+
+                            matCol.template_list("CMT_Exporter_UL_TextureList", "", curMat, "Textures", curMat,  "ActivedPropertyIndex",maxrows=10)
+
+                    scriptCol = col.column()
+                    scriptCol.prop(data,"MaterialKeywords")
+                    batchModifyRow = scriptCol.row()
+                    batchModifyRow.prop(data,"MaterialTargetClass")
+                    batchModifyRow.operator("cmt.exporter_ot_modifymattypebykeywords",text="按关键字修改材质类型")
+
+                    scriptCol.prop(data,"TextureCompressionRate")
+                    scriptCol.prop(data,"TexEmbededExportScript")
+                    scriptCol.prop(data,"TexCustomExportScript")
+                    scriptCol.enabled = data.IsExportMaterial
             col.prop(data,"IsExportArtdef",icon="ASSET_MANAGER")
             # col.prop(data,"IsExportArtdef")
             artdefCol = col.column()

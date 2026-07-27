@@ -592,14 +592,24 @@ class CMT_Exporter_OT_MatchAnimations(bpy.types.Operator):
         data = context.scene.CMT.ExporterSettings
         curAst = data.AstList[data.CurrentAstIndex]
         astName = curAst.FileName.lower()
+        ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
+        allowed = get_allowed_anm_classes(ast_class)
         matched = 0
         for anm in curAst.Animations:
             for action in bpy.data.actions:
                 actionName = action.name.lower()
                 if (astName + "_") in actionName:
                     if actionName.replace(astName + "_", "") in anm.text.lower():
-                        anm.value = action
-                        matched += 1
+                        anm_entry = None
+                        for entry in data.AnimationList:
+                            if entry.value is action:
+                                anm_entry = entry
+                                break
+                        if anm_entry:
+                            anm_class = resolve_enum(anm_entry, "Class", get_anmtype_items)
+                            if anm_class in allowed:
+                                anm.value = action
+                                matched += 1
                         break
         if matched:
             self.report({'INFO'}, f"已匹配 {matched} 个动画")

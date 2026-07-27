@@ -4,43 +4,46 @@ from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 
 
-def _deferred_warning(msg):
-    def draw(self, context):
-        self.layout.label(text=msg, icon='ERROR')
-    bpy.context.window_manager.popup_menu(draw, title="引用失效警告", icon='ERROR')
-    return None
-
-
 def geo_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
     newClass = resolve_enum(self, "Class", get_geotype_items)
-    affected = []
+    geoFileName = self.FileName
     for ast in data.AstList:
         if len(ast.Geometries) == 0:
             continue
         ast_class = resolve_enum(ast, "Class", get_ast_class_items)
         allowed = get_allowed_geo_classes(ast_class)
         if newClass not in allowed:
-            affected.append(ast.FileName)
-    if affected:
-        msg = f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_warning(msg), first_interval=0.0)
+            ast_allowed = get_allowed_geo_classes(ast_class)
+            ast_items = []
+            for property in data.GeoList:
+                geo_class = resolve_enum(property, "Class", get_geotype_items)
+                if geo_class in ast_allowed:
+                    ast_items.append(property.FileName)
+            to_remove = []
+            for i, geo_ref in enumerate(ast.Geometries):
+                raw = geo_ref["value"]
+                ref_name = ""
+                if isinstance(raw, int) and 0 <= raw < len(ast_items):
+                    ref_name = ast_items[raw]
+                if ref_name == geoFileName or not ref_name:
+                    to_remove.append(i)
+            for i in reversed(to_remove):
+                ast.Geometries.remove(i)
 
 
 def anm_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
-    newClass = resolve_enum(self, "Class", get_anmtype_items)
-    affected = []
     for ast in data.AstList:
         if len(ast.Animations) == 0:
             continue
         ast_class = resolve_enum(ast, "Class", get_ast_class_items)
         allowed = get_allowed_anm_classes(ast_class)
+        newClass = resolve_enum(self, "Class", get_anmtype_items)
         if newClass not in allowed:
-            affected.append(ast.FileName)
-    if affected:
-        msg = f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_warning(msg), first_interval=0.0)
+            for anm_ref in ast.Animations:
+                if anm_ref.value is self.value:
+                    anm_ref.value = None
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

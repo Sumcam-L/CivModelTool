@@ -4,25 +4,10 @@ from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 
 
-class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
-    bl_idname = "cmt.exporter_ot_reportwarning"
-    bl_label = "Report Warning"
-    bl_description = "Report a warning message"
-    bl_options = {'REGISTER'}
-
-    message: bpy.props.StringProperty()
-
-    def execute(self, context):
-        if self.message:
-            self.report({'WARNING'}, self.message)
-        return {"FINISHED"}
-
-
-def _deferred_report(msg):
-    try:
-        bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
-    except Exception:
-        pass
+def _deferred_warning(msg):
+    def draw(self, context):
+        self.layout.label(text=msg, icon='ERROR')
+    bpy.context.window_manager.popup_menu(draw, title="引用失效警告", icon='ERROR')
     return None
 
 
@@ -39,7 +24,7 @@ def geo_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
+        bpy.app.timers.register(lambda: _deferred_warning(msg), first_interval=0.0)
 
 
 def anm_class_changed(self, context):
@@ -55,7 +40,7 @@ def anm_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
+        bpy.app.timers.register(lambda: _deferred_warning(msg), first_interval=0.0)
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

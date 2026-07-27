@@ -157,6 +157,8 @@ def get_ast_files(self,context):
 
 def get_astgeometries_items(self,context):
     data = context.scene.CMT.ExporterSettings
+    if len(data.AstList) == 0:
+        return [("", "无可用模型", "")]
     curAst = data.AstList[data.CurrentAstIndex]
     allowed = get_allowed_geo_classes(curAst.Class)
     items = []

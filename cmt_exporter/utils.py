@@ -155,16 +155,27 @@ def get_ast_files(self,context):
         items.append((property.FileName, property.FileName, ""))
     return items
 
+def resolve_enum(prop_group, prop_name, items_func):
+    raw = prop_group[prop_name]
+    if isinstance(raw, str):
+        return raw
+    items = items_func(None, None)
+    if isinstance(raw, int) and 0 <= raw < len(items):
+        return items[raw][0]
+    return ""
+
+
 def get_astgeometries_items(self,context):
     data = context.scene.CMT.ExporterSettings
     if len(data.AstList) == 0:
         return [("", "无可用模型", "")]
     curAst = data.AstList[data.CurrentAstIndex]
-    ast_class = curAst["Class"]
+    ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
     allowed = get_allowed_geo_classes(ast_class)
     items = []
     for property in data.GeoList:
-        if property["Class"] in allowed:
+        geo_class = resolve_enum(property, "Class", get_geotype_items)
+        if geo_class in allowed:
             items.append((property.FileName, property.FileName, ""))
     if not items:
         items.append(("", "无可用模型", ""))

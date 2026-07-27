@@ -4,6 +4,7 @@ import os
 import clr
 from .properties import CMT_Exporter_Settings
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
+from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 from .io_export_cn6 import *
 import tempfile
 from System.Collections.Generic import List
@@ -238,7 +239,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
     def validate_ast_references(self, data: CMT_Exporter_Settings):
         errors = []
         for ast in data.AstList:
-            ast_class = ast["Class"]
+            ast_class = resolve_enum(ast, "Class", get_ast_class_items)
             allowed_geo = get_allowed_geo_classes(ast_class)
             allowed_anm = get_allowed_anm_classes(ast_class)
 
@@ -246,7 +247,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                 geoClass = None
                 for geo in data.GeoList:
                     if geo.FileName == geo_ref.value:
-                        geoClass = geo["Class"]
+                        geoClass = resolve_enum(geo, "Class", get_geotype_items)
                         break
                 if geoClass and geoClass not in allowed_geo:
                     errors.append(
@@ -260,7 +261,7 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                 anmClass = None
                 for anm in data.AnimationList:
                     if anm.value is anm_ref.value:
-                        anmClass = anm["Class"]
+                        anmClass = resolve_enum(anm, "Class", get_anmtype_items)
                         break
                 if anmClass and anmClass not in allowed_anm:
                     errors.append(

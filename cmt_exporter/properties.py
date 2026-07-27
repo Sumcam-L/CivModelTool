@@ -1,6 +1,7 @@
 import bpy
 from .utils import *
 from .allowed_classes import get_allowed_anm_classes
+from .utils import resolve_enum, get_ast_class_items, get_anmtype_items
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings
@@ -148,10 +149,12 @@ def astgeometry_poll(self,obj):
 def astanimation_poll(self,obj):
     data = bpy.context.scene.CMT.ExporterSettings
     curAst = data.AstList[data.CurrentAstIndex]
-    allowed = get_allowed_anm_classes(curAst["Class"])
+    ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
+    allowed = get_allowed_anm_classes(ast_class)
     for anm in data.AnimationList:
         if anm.value is obj:
-            if anm["Class"] in allowed:
+            anm_class = resolve_enum(anm, "Class", get_anmtype_items)
+            if anm_class in allowed:
                 return True
     return False
 

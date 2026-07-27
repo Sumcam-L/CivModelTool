@@ -1,6 +1,7 @@
 import bpy
 from .utils import g_DSGs_action
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
+from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 from .properties import CMT_Exporter_Settings,CMT_Exporter_PG_AstAnimationProperty,CMT_Exporter_PG_AstGeometryProperty
 
 class CMT_Exporter_PT_Panel(bpy.types.Panel):
@@ -218,9 +219,9 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
             geoClass = None
             for geo in settings.GeoList:
                 if geo.FileName == item.value:
-                    geoClass = geo["Class"]
+                    geoClass = resolve_enum(geo, "Class", get_geotype_items)
                     break
-            allowed = get_allowed_geo_classes(curAst["Class"])
+            allowed = get_allowed_geo_classes(resolve_enum(curAst, "Class", get_ast_class_items))
             if geoClass and geoClass not in allowed:
                 invalid = True
                 hint = f"类型 {geoClass} 不被允许"
@@ -230,9 +231,9 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
             if item.value:
                 for anm in settings.AnimationList:
                     if anm.value is item.value:
-                        anmClass = anm["Class"]
+                        anmClass = resolve_enum(anm, "Class", get_anmtype_items)
                         break
-            allowed = get_allowed_anm_classes(curAst["Class"])
+            allowed = get_allowed_anm_classes(resolve_enum(curAst, "Class", get_ast_class_items))
             if anmClass and anmClass not in allowed:
                 invalid = True
                 hint = f"类型 {anmClass} 不被允许"

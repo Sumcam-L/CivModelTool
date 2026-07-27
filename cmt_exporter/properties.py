@@ -1,7 +1,7 @@
 import bpy
 from .utils import *
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
-from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
+from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items, fuzzy_match_material_class
 
 
 class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
@@ -160,21 +160,15 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
             for prop in geo.Geometries:
                 for mat in prop.value.data.materials:
                         if mat.name == target:
-                            return geo.Class
+                            return resolve_enum(geo, "Class", get_geotype_items)
     
     def materialInstance_name_update(self,context):
 
         if len(self.Textures) == 0:
-            for key,v in g_Mat_json[self.Class].items():
-                if "AssetObject" not in v:
-                    # tex = self.Textures.add()
-                    parentClass = self.get_parentgeo_class(context,self.FileName)
-                    if parentClass and parentClass in g_Mat_json:
-                        self.Class = parentClass
-
-                    # tex.matName = self.FileName
-                    # tex.Class = parentClass if parentClass else self.Class
-                    # tex.text = key
+            parentClass = self.get_parentgeo_class(context,self.FileName)
+            matched = fuzzy_match_material_class(parentClass)
+            if matched:
+                self.Class = matched
     def mat_class_update(self,context):
         self.Textures.clear()
         for key,v in g_Mat_json[self.Class].items():

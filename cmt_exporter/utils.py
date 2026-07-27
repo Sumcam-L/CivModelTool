@@ -267,6 +267,28 @@ def get_material_class_items(self,context):
         items.append((v,v,""))
     return items
 
+def fuzzy_match_material_class(geo_class):
+    if not geo_class:
+        return None
+    if geo_class in g_Mat_json:
+        return geo_class
+    best = None
+    for mat_class in g_Mat_json:
+        if geo_class.startswith(mat_class):
+            if best is None or len(mat_class) > len(best):
+                best = mat_class
+    if best:
+        return best
+    for suffix in ["Model", "Geometry", "ObstructionProfile", "ShadowVolume"]:
+        if geo_class.endswith(suffix):
+            stripped = geo_class[:-len(suffix)].rstrip("_")
+            if stripped in g_Mat_json:
+                return stripped
+            for mat_class in g_Mat_json:
+                if mat_class.startswith(stripped) or stripped in mat_class:
+                    return mat_class
+    return None
+
 def get_material_items(self,context):
     data = context.scene.CMT.ExporterSettings
     items = []

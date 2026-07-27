@@ -147,8 +147,8 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
                 if "AssetObject" not in v:
                     # tex = self.Textures.add()
                     parentClass = self.get_parentgeo_class(context,self.FileName)
-                    self.Class = parentClass if parentClass else self.Class
-                    print(1111111111,self.FileName,self.Class)
+                    if parentClass and parentClass in g_Mat_json:
+                        self.Class = parentClass
 
                     # tex.matName = self.FileName
                     # tex.Class = parentClass if parentClass else self.Class

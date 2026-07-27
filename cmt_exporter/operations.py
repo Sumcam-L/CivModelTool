@@ -71,9 +71,13 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         fps = int(bpy.context.scene.render.fps / bpy.context.scene.render.fps_base)
         
         for ast in astList:
+            print("len",len(ast.Geometries))
             if len(ast.Geometries) == 0: continue
             if ast.FileName not in exportList:
                 exportList[ast.FileName] = AstInfo()
+            print("ast")
+            print(ast.Geometries[0])
+            print(ast.Geometries[0].value)
             exportList[ast.FileName].geometry = ast.Geometries[0].value
             exportList[ast.FileName].ClassName = ast.Class
             exportList[ast.FileName].DSG = ast.DSG

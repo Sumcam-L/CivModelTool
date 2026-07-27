@@ -4,6 +4,26 @@ from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 
 
+class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
+    bl_idname = "cmt.exporter_ot_reportwarning"
+    bl_label = "Report Warning"
+    bl_options = {'REGISTER'}
+
+    message: bpy.props.StringProperty()
+
+    def execute(self, context):
+        if self.message:
+            self.report({'WARNING'}, self.message)
+        return {"FINISHED"}
+
+
+def _report(msg):
+    try:
+        bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
+    except Exception:
+        pass
+
+
 def geo_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
     newClass = resolve_enum(self, "Class", get_geotype_items)
@@ -30,20 +50,26 @@ def geo_class_changed(self, context):
                     to_remove.append(i)
             for i in reversed(to_remove):
                 ast.Geometries.remove(i)
+            if to_remove:
+                _report(f"已从 Ast [{ast.FileName}] 删除 {len(to_remove)} 个失效模型引用")
 
 
 def anm_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
+    newClass = resolve_enum(self, "Class", get_anmtype_items)
     for ast in data.AstList:
         if len(ast.Animations) == 0:
             continue
         ast_class = resolve_enum(ast, "Class", get_ast_class_items)
         allowed = get_allowed_anm_classes(ast_class)
-        newClass = resolve_enum(self, "Class", get_anmtype_items)
         if newClass not in allowed:
+            cleared = 0
             for anm_ref in ast.Animations:
                 if anm_ref.value is self.value:
                     anm_ref.value = None
+                    cleared += 1
+            if cleared:
+                _report(f"已从 Ast [{ast.FileName}] 清空 {cleared} 个失效动画引用")
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

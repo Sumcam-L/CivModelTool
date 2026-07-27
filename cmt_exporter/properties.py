@@ -18,11 +18,12 @@ class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
 
 
 def _report(msg):
-    print(f"WARNING: {msg}")
+    def draw(self, context):
+        self.layout.label(text=msg, icon='ERROR')
     try:
-        bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
-    except Exception as e:
-        print(f"report operator failed: {e}")
+        bpy.context.window_manager.popup_menu(draw, title="类型不匹配", icon='ERROR')
+    except Exception:
+        pass
 
 
 def geo_class_changed(self, context):

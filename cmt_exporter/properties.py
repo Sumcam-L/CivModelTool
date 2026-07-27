@@ -34,22 +34,10 @@ def geo_class_changed(self, context):
         ast_class = resolve_enum(ast, "Class", get_ast_class_items)
         allowed = get_allowed_geo_classes(ast_class)
         if newClass not in allowed:
-            ast_allowed = get_allowed_geo_classes(ast_class)
-            ast_items = []
-            for property in data.GeoList:
-                geo_class = resolve_enum(property, "Class", get_geotype_items)
-                if geo_class in ast_allowed:
-                    ast_items.append(property.FileName)
             to_remove = []
             for i, geo_ref in enumerate(ast.Geometries):
-                try:
-                    raw = geo_ref["value"]
-                except KeyError:
-                    continue
-                ref_name = ""
-                if isinstance(raw, int) and 0 <= raw < len(ast_items):
-                    ref_name = ast_items[raw]
-                if ref_name == geoFileName or not ref_name:
+                ref_name = geo_ref.value
+                if not ref_name or ref_name == geoFileName:
                     to_remove.append(i)
             for i in reversed(to_remove):
                 ast.Geometries.remove(i)

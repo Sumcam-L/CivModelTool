@@ -156,7 +156,10 @@ def get_ast_files(self,context):
     return items
 
 def resolve_enum(prop_group, prop_name, items_func):
-    raw = prop_group[prop_name]
+    try:
+        raw = prop_group[prop_name]
+    except KeyError:
+        raw = prop_group.bl_rna.properties[prop_name].default
     if isinstance(raw, str):
         return raw
     items = items_func(None, None)

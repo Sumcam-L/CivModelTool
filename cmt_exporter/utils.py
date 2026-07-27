@@ -270,12 +270,10 @@ def get_material_class_items(self,context):
 def get_material_items(self,context):
     data = context.scene.CMT.ExporterSettings
     items = []
-    if len(data.AstList) == 0:
-        return items
-    curAst = data.AstList[data.CurrentAstIndex]
     refGeos = []
-    for geo in curAst.Geometries:
-        refGeos.append(geo.value)
+    for ast in data.AstList:
+        for geo in ast.Geometries:
+            refGeos.append(geo.value)
     for geo in data.GeoList:
         if geo.FileName in refGeos:
             for prop in geo.Geometries:
@@ -284,12 +282,10 @@ def get_material_items(self,context):
     return items
 def mat_poll(self,obj):
     data = self
-    if len(data.AstList) == 0:
-        return False
-    curAst = data.AstList[data.CurrentAstIndex]
     refGeos = []
-    for geo in curAst.Geometries:
-        refGeos.append(geo.value)
+    for ast in data.AstList:
+        for geo in ast.Geometries:
+            refGeos.append(geo.value)
     for geo in data.GeoList:
         if geo.FileName in refGeos:
             for prop in geo.Geometries:

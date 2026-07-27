@@ -203,7 +203,7 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
         row = layout.row()
 
-        split = row.split(factor=0.4 )
+        split = row.split(factor=0.2 )
         if type(item) == CMT_Exporter_PG_AstAnimationProperty:
             split.label(text=item.text)
         else:

@@ -325,7 +325,7 @@ class CMT_Exporter_OT_AddGeometry(bpy.types.Operator):
         geoList = data.GeoList
         item = geoList.add()
         item.FileName = self.Name
-        item.Class = 0
+        item.Class = "DecalGeometry"
         index = len(geoList) - 1
         data.CurrentGeoIndex = index
         data.GeoName = self.Name

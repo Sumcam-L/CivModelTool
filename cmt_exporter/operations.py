@@ -526,6 +526,7 @@ class CMT_Exporter_OT_AddRef(bpy.types.Operator):
         if type=="Geometries":
             if len(instance.Geometries) == 0:
                 instance.Geometries.add()
+            matlist_refresh(data, context)
         elif type=="Animations":
             instance.Animations.add()
         elif type=="Behaviors":
@@ -544,6 +545,7 @@ class CMT_Exporter_OT_RemoveRef(bpy.types.Operator):
         type = data.AstShowProperty
         if type=="Geometries":
             instance.Geometries.remove(instance.ActivedPropertyIndex)
+            matlist_refresh(data, context)
         elif type=="Animations":
             instance.Animations.remove(instance.ActivedPropertyIndex)
         elif type=="Behaviors":

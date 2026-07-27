@@ -188,14 +188,9 @@ def astgeometry_poll(self,obj):
 
 def astanimation_poll(self,obj):
     data = bpy.context.scene.CMT.ExporterSettings
-    curAst = data.AstList[data.CurrentAstIndex]
-    ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
-    allowed = get_allowed_anm_classes(ast_class)
     for anm in data.AnimationList:
         if anm.value is obj:
-            anm_class = resolve_enum(anm, "Class", get_anmtype_items)
-            if anm_class in allowed:
-                return True
+            return True
     return False
 
 class CMT_Exporter_PG_ArtdefInstance(bpy.types.PropertyGroup):

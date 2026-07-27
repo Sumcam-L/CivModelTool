@@ -71,10 +71,10 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         fps = int(bpy.context.scene.render.fps / bpy.context.scene.render.fps_base)
         
         for ast in astList:
-            if len(ast.Geometries) == 0: continue
             if ast.FileName not in exportList:
                 exportList[ast.FileName] = AstInfo()
-            exportList[ast.FileName].geometry = ast.Geometries[0].value
+            if len(ast.Geometries) > 0:
+                exportList[ast.FileName].geometry = ast.Geometries[0].value
             exportList[ast.FileName].ClassName = ast.Class
             exportList[ast.FileName].DSG = ast.DSG
             anms = Dictionary[str, ValueTuple[str,str]]()
@@ -92,7 +92,6 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
             #     anms[anm.text] = anm.value.name
             exportList[ast.FileName].animations = anms
             exportList[ast.FileName].behaviors = behs
-        
             CN6FileOps.generateAst(exportList,projpath)
         return
     
@@ -131,12 +130,12 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                             deleteList.append(unpackedTexs["gloss"])
                             if mat.FileName not in materialList:
                                 materialList[mat.FileName] = Dictionary[str, str]()
-                            ##金属度实际上似乎是粗糙度
+
                             if "Metalness" in g_Mat_json[tex.Class]:
                                 textureDict[unpackedTexs["metallic"]] = g_Mat_json[tex.Class]["Metalness"]
                                 materialList[mat.FileName]["Metalness"] = str(Path(unpackedTexs["metallic"]).stem)
                                 
-                            ##光泽是金属度
+
                             if "Gloss" in g_Mat_json[tex.Class]:
                                 textureDict[unpackedTexs["gloss"]] = g_Mat_json[tex.Class]["Gloss"]
                                 materialList[mat.FileName]["Gloss"] = str(Path(unpackedTexs["gloss"]).stem)
@@ -584,6 +583,7 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
 
     def execute(self, context:bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
+        matlist_refresh(data, context)
         for mat in data.MaterialList:
             if data.MaterialTargetClass:
                 keywords = data.MaterialKeywords.lower()

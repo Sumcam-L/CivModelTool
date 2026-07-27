@@ -140,7 +140,7 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             if data.IsExportMaterial:
                 has_geo = len(data.AstList) > 0 and len(data.AstList[data.CurrentAstIndex].Geometries) > 0
                 if not has_geo:
-                    matCol.label(text="当前ast未引用模型", icon="ERROR")
+                    matCol.label(text="当前ast无引用模型，无法编辑材质", icon="ERROR")
                 else:
                     matCol.prop(data,"MaterialName")
                     if data.MaterialName and data.CurrentMatIndex < len(data.MaterialList):
@@ -150,16 +150,16 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
 
                             matCol.template_list("CMT_Exporter_UL_TextureList", "", curMat, "Textures", curMat,  "ActivedPropertyIndex",maxrows=10)
 
-                    scriptCol = col.column()
-                    scriptCol.prop(data,"MaterialKeywords")
-                    batchModifyRow = scriptCol.row()
-                    batchModifyRow.prop(data,"MaterialTargetClass")
-                    batchModifyRow.operator("cmt.exporter_ot_modifymattypebykeywords",text="按关键字修改材质类型")
+                scriptCol = col.column()
+                scriptCol.prop(data,"MaterialKeywords")
+                batchModifyRow = scriptCol.row()
+                batchModifyRow.prop(data,"MaterialTargetClass")
+                batchModifyRow.operator("cmt.exporter_ot_modifymattypebykeywords",text="按关键字修改材质类型")
 
-                    scriptCol.prop(data,"TextureCompressionRate")
-                    scriptCol.prop(data,"TexEmbededExportScript")
-                    scriptCol.prop(data,"TexCustomExportScript")
-                    scriptCol.enabled = data.IsExportMaterial
+                scriptCol.prop(data,"TextureCompressionRate")
+                scriptCol.prop(data,"TexEmbededExportScript")
+                scriptCol.prop(data,"TexCustomExportScript")
+                scriptCol.enabled = data.IsExportMaterial and has_geo
             col.prop(data,"IsExportArtdef",icon="ASSET_MANAGER")
             # col.prop(data,"IsExportArtdef")
             artdefCol = col.column()

@@ -136,6 +136,7 @@ def geo_index_update(self,context):
     
 def ast_index_update(self,context):
     self.AstName = self.AstList[self.CurrentAstIndex].FileName
+    matlist_refresh(self,context)
 
 def geo_filename_update(self,context):
     for index, geoInstance in enumerate(self.GeoList):
@@ -157,10 +158,8 @@ def get_ast_files(self,context):
 
 def resolve_enum(prop_group, prop_name, items_func):
     try:
-        print(prop_name,prop_name in prop_group)
         raw = prop_group[prop_name]
     except KeyError:
-        print("error")
         raw = prop_group.bl_rna.properties[prop_name].default
     if isinstance(raw, str):
         return raw
@@ -179,9 +178,7 @@ def get_astgeometries_items(self,context):
     allowed = get_allowed_geo_classes(ast_class)
     items = []
     for property in data.GeoList:
-        print(property,property.Class)
         geo_class = resolve_enum(property, "Class", get_geotype_items)
-        print(111,geo_class)
         if geo_class in allowed:
             items.append((property.FileName, property.FileName, ""))
     if not items:
@@ -273,10 +270,12 @@ def get_material_class_items(self,context):
 def get_material_items(self,context):
     data = context.scene.CMT.ExporterSettings
     items = []
+    if len(data.AstList) == 0:
+        return items
+    curAst = data.AstList[data.CurrentAstIndex]
     refGeos = []
-    for ast in data.AstList:
-        for geo in ast.Geometries:
-            refGeos.append(geo.FileName)
+    for geo in curAst.Geometries:
+        refGeos.append(geo.value)
     for geo in data.GeoList:
         if geo.FileName in refGeos:
             for prop in geo.Geometries:
@@ -285,11 +284,12 @@ def get_material_items(self,context):
     return items
 def mat_poll(self,obj):
     data = self
+    if len(data.AstList) == 0:
+        return False
+    curAst = data.AstList[data.CurrentAstIndex]
     refGeos = []
-    ojbs = bpy.data.objects
-    for ast in data.AstList:
-        for geo in ast.Geometries:
-            refGeos.append(geo.value)
+    for geo in curAst.Geometries:
+        refGeos.append(geo.value)
     for geo in data.GeoList:
         if geo.FileName in refGeos:
             for prop in geo.Geometries:

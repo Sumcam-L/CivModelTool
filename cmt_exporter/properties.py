@@ -51,7 +51,7 @@ def geo_class_changed(self, context):
             for i in reversed(to_remove):
                 ast.Geometries.remove(i)
             if to_remove:
-                _report(f"已从 Ast [{ast.FileName}] 删除 {len(to_remove)} 个失效模型引用")
+                _report(f"类型不匹配，已删除 Ast [{ast.FileName}] 中对该模型的引用")
 
 
 def anm_class_changed(self, context):
@@ -69,7 +69,7 @@ def anm_class_changed(self, context):
                     anm_ref.value = None
                     cleared += 1
             if cleared:
-                _report(f"已从 Ast [{ast.FileName}] 清空 {cleared} 个失效动画引用")
+                _report(f"类型不匹配，已删除 Ast [{ast.FileName}] 中对该动画的引用")
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

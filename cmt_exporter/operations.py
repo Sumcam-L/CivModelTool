@@ -362,9 +362,12 @@ class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         geoList = data.GeoList
-        geoFileName = geoList[data.CurrentGeoIndex].FileName
-        geoList.remove(data.CurrentGeoIndex)
-        for ast in data.AstList:
+        geoIndex = data.CurrentGeoIndex
+        geoFileName = geoList[geoIndex].FileName
+
+        savedAstIndex = data.CurrentAstIndex
+        for ast_idx, ast in enumerate(data.AstList):
+            data.CurrentAstIndex = ast_idx
             to_remove = []
             for i, geo_ref in enumerate(ast.Geometries):
                 if geo_ref.value == geoFileName:
@@ -373,10 +376,13 @@ class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
                 ast.Geometries.remove(i)
             if to_remove:
                 _report(f"已删除 Ast [{ast.FileName}] 中对模型 [{geoFileName}] 的引用")
-        if data.CurrentGeoIndex >= len(geoList) and len(geoList) > 0:
+        data.CurrentAstIndex = savedAstIndex
+
+        geoList.remove(geoIndex)
+        if geoIndex >= len(geoList) and len(geoList) > 0:
             data.CurrentGeoIndex = len(geoList) - 1
             data.GeoName = geoList[data.CurrentGeoIndex].FileName
-            
+
         return {"FINISHED"}
 
 class CMT_Exporter_OT_AddMesh(bpy.types.Operator):

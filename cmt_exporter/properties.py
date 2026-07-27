@@ -18,6 +18,14 @@ class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
         return {"FINISHED"}
 
 
+def _deferred_report(msg):
+    try:
+        bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
+    except Exception:
+        pass
+    return None
+
+
 def geo_class_changed(self, context):
     data = context.scene.CMT.ExporterSettings
     newClass = resolve_enum(self, "Class", get_geotype_items)
@@ -31,10 +39,7 @@ def geo_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改 {self.FileName} 类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        try:
-            bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
-        except Exception:
-            pass
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
 
 
 def anm_class_changed(self, context):
@@ -50,10 +55,7 @@ def anm_class_changed(self, context):
             affected.append(ast.FileName)
     if affected:
         msg = f"修改动画类型为 {newClass}，以下Ast引用可能失效: {', '.join(affected)}"
-        try:
-            bpy.ops.cmt.exporter_ot_reportwarning(message=msg)
-        except Exception:
-            pass
+        bpy.app.timers.register(lambda: _deferred_report(msg), first_interval=0.0)
 
 def geometry_poll(self,obj):
     # data = bpy.context.scene.CMT.ExporterSettings

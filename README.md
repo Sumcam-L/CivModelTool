@@ -25,3 +25,13 @@
 - [型态键转骨](https://github.com/Sumcam-L/CivModelTool/wiki/型态键转骨) - 型态键动画转骨骼动画
 - [插件更新](https://github.com/Sumcam-L/CivModelTool/wiki/插件更新) - 自动检查与安装更新
 - [完整工作流](https://github.com/Sumcam-L/CivModelTool/wiki/完整工作流) - 从建模到导出的完整流程
+
+## 致谢 / 第三方代码与修改说明
+
+本项目使用了 CivNexus6 的部分代码，并在其基础上进行了修改：
+
+- 原始项目：CivNexus6 — 3D Graphics Tool for Civilization VI  
+  作者：Deliverator  
+  仓库：https://github.com/deliverator23/CivNexus6
+
+

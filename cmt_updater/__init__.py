@@ -1,19 +1,12 @@
 import bpy
 
-from . import core
 from . import operations
 from . import preferences
 from . import ui
 
+from ..registration import register_modules, unregister_modules
+
 modules = [operations, preferences, ui]
-
-
-def get_classes_from_module(module):
-    classes = []
-    for name, obj in module.__dict__.items():
-        if isinstance(obj, type) and obj.__module__ == module.__name__:
-            classes.append(obj)
-    return classes
 
 
 def _startup_check():
@@ -29,15 +22,11 @@ def _startup_check():
 
 
 def register() -> None:
-    for module in modules:
-        for tClass in get_classes_from_module(module):
-            bpy.utils.register_class(tClass)
+    register_modules(modules)
     bpy.app.timers.register(_startup_check, first_interval=3.0)
 
 
 def unregister() -> None:
     if bpy.app.timers.is_registered(_startup_check):
         bpy.app.timers.unregister(_startup_check)
-    for module in modules:
-        for tClass in get_classes_from_module(module):
-            bpy.utils.unregister_class(tClass)
+    unregister_modules(modules)

@@ -2,8 +2,17 @@ import bpy
 
 from collections import defaultdict
 import time
+import bmesh
+from collections import deque
+from mathutils import Vector
 
-from .utils import*
+from .utils import (
+    clamp_dot_product,
+    create_bone_for_vertex,
+    get_or_create_fcurve,
+    normalize,
+    separateSelectedPart,
+)
 
 class CMT_S2B_OT_Convert(bpy.types.Operator):
     
@@ -23,18 +32,18 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
 
         startTime = time.time()
         startTime1 = startTime
-        print("开始获取顶点数据")
+        self.report({'INFO'}, "开始获取顶点数据")
         if not obj or not obj.data.shape_keys:
-            print("请选中一个包含形态键的对象")
+            self.report({'WARNING'}, "请选中一个包含形态键的对象")
         else:
             shape_keys = obj.data.shape_keys
             shapekeyaction = (
                 shape_keys.animation_data.action if shape_keys.animation_data else None
             )
             if not shapekeyaction:
-                print("该对象的形态键没有动画数据！")
+                self.report({'WARNING'}, "该对象的形态键没有动画数据！")
             else:
-                print(f"找到动画: {shapekeyaction.name}")
+                self.report({'INFO'}, f"找到动画: {shapekeyaction.name}")
                 obj.hide_set(False)
 
                 actions_to_process = []
@@ -73,7 +82,7 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                     if not shape_key:
                         continue
 
-                    print(f"\n形态键: {shape_key_name}")
+                    self.report({'INFO'}, f"形态键: {shape_key_name}")
 
                     for index, vert in enumerate(shape_key.data):
                         shape_offset = vert.co - basis_key.data[index].co
@@ -188,11 +197,12 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                                 influence_vertices[idx]["BoneName"] = combineName
                                 influence_vertices[idx]["WeightRatio"] = total / max_offset_total
 
-                print(
-                    f"获取顶点数据完成，共{len(influence_vertices)}个受影响顶点，耗时：{time.time() - startTime1:.4f}"
+                self.report(
+                    {'INFO'},
+                    f"获取顶点数据完成，共{len(influence_vertices)}个受影响顶点，耗时：{time.time() - startTime1:.4f}",
                 )
 
-                print("开始绑定骨骼")
+                self.report({'INFO'}, "开始绑定骨骼")
                 boneCount = 0
                 startTime1 = time.time()
                 for index, vertexInfo in influence_vertices.items():
@@ -219,8 +229,9 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                         parent_vg.add([index], 1.0 - weight, "REPLACE")
 
                 bpy.ops.object.mode_set(mode="POSE")
-                print(
-                    f"绑定骨骼完成，共新增{boneCount}根骨骼，耗时：{time.time() - startTime1:.4f}"
+                self.report(
+                    {'INFO'},
+                    f"绑定骨骼完成，共新增{boneCount}根骨骼，耗时：{time.time() - startTime1:.4f}",
                 )
 
                 bone_dependents = {}
@@ -252,7 +263,10 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
 
                     action_frame_start = int(action_frame_start)
                     action_frame_end = int(action_frame_end)
-                    print(f"\n处理动画: {action.name} (帧 {action_frame_start}-{action_frame_end})")
+                    self.report(
+                        {'INFO'},
+                        f"处理动画: {action.name} (帧 {action_frame_start}-{action_frame_end})",
+                    )
 
                     startTime1 = time.time()
                     transformations = {}
@@ -284,7 +298,10 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
 
                         frame += 1
 
-                    print(f"计算动画数据完成，骨骼数={len(transformations)}，耗时：{time.time() - startTime1:.4f}")
+                    self.report(
+                        {"INFO"},
+                        f"计算动画数据完成，骨骼数={len(transformations)}，耗时：{time.time() - startTime1:.4f}",
+                    )
 
                     if abandonmentRate > 0:
                         delCount = 0
@@ -293,42 +310,8 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                                 if not bone_dependents.get(i, False):
                                     del transformations[i]
                                     delCount += 1
-                        print(f"舍弃数据完成,共删除{delCount}根骨骼的数据")
+                        self.report({'INFO'}, f"舍弃数据完成,共删除{delCount}根骨骼的数据")
 
-                    #简化数据
-                    threshold = 1e-4
-                    # for bone_name, value in transformations.items():
-                    #     index1 = 0
-                    #     while index1 < len(value):
-                    #         FrameInfo = value[index1]
-                    #         frame1 = FrameInfo["Frame"]
-                    #         relativeCo = FrameInfo["Co"]
-                    #         if frame1 != action_frame_start and frame1 != action_frame_end:
-                    #             same_as_prev = (
-                    #                 relativeCo - value[index1 - 1]["Co"]
-                    #             ).length_squared < threshold**2
-                    #             same_as_next = (
-                    #                 relativeCo - value[index1 + 1]["Co"]
-                    #             ).length_squared < threshold**2
-                    #             if same_as_prev and same_as_next:
-                    #                 del transformations[bone_name][index1]
-                    #                 index1 -= 1
-                    #                 frameCount -= 1
-                    #             else:
-                    #                 theoValue = (
-                    #                     transformations[bone_name][index1 - 1]["Co"]
-                    #                     + (
-                    #                         transformations[bone_name][index1 + 1]["Co"]
-                    #                         - transformations[bone_name][index1 - 1]["Co"]
-                    #                     ) * 0.5
-                    #                 )
-                    #                 if (
-                    #                     relativeCo - theoValue
-                    #                 ).length_squared < threshold**2:
-                    #                     del transformations[bone_name][index1]
-                    #                     index1 -= 1
-                    #                     frameCount -= 1
-                    #         index1 += 1
 
                     output_action_name = f"SKB_{action.name}"
                     if output_action_name in bpy.data.actions:
@@ -358,7 +341,7 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                             fc.update()
 
                     last_action = action_out
-                    print(f"动画 {action.name} 处理完成，共插入{frameCount}个关键帧")
+                    self.report({'INFO'}, f"动画 {action.name} 处理完成，共插入{frameCount}个关键帧")
 
                 if last_action:
                     try:
@@ -372,11 +355,11 @@ class CMT_S2B_OT_Convert(bpy.types.Operator):
                 if shape_keys:
                     if shape_keys.animation_data and shape_keys.animation_data.action:
                         shape_keys.animation_data.action = None
-                    for i, key_block in enumerate(shape_keys.key_blocks):
-                        if key_block.name != "Basis" or i != 0:
-                            key_block.value = 0.0
+                    # 索引 0 是 Basis（基型），不需要归零
+                    for key_block in shape_keys.key_blocks[1:]:
+                        key_block.value = 0.0
 
-                print(f"形态键动画已转换为骨骼动画，总耗时:{time.time() - startTime:.4f}")
+                self.report({'INFO'}, f"形态键动画已转换为骨骼动画，总耗时:{time.time() - startTime:.4f}")
 
         return {"FINISHED"}
 
@@ -394,9 +377,9 @@ class CMT_S2B_OT_ClearShapeKey(bpy.types.Operator):
         if shape_keys:
             if shape_keys.animation_data and shape_keys.animation_data.action:
                 shape_keys.animation_data.action = None
-            for i, key_block in enumerate(shape_keys.key_blocks):
-                if key_block.name != "Basis" or i != 0:
-                    key_block.value = 0.0
+            # 索引 0 是 Basis（基型），不需要归零
+            for key_block in shape_keys.key_blocks[1:]:
+                key_block.value = 0.0
         return {"FINISHED"}
 
 class CMT_S2B_OT_EditSeparateMesh(bpy.types.Operator):
@@ -410,15 +393,13 @@ class CMT_S2B_OT_EditSeparateMesh(bpy.types.Operator):
 
         obj = bpy.context.active_object
 
-        if obj == None:
-            self.report("请选择一个网格")
-            return
+        if obj is None:
+            self.report({"ERROR"}, "请选择一个网格")
+            return {"CANCELLED"}
 
         normals = {}
         bpy.ops.object.mode_set(mode="OBJECT")  # 确保在对象模式
 
-        # obj.data.use_auto_smooth = True  # 启用自动平滑
-        # obj.data.calc_normals_split()  # 计算默认法线
 
         for polyIndex, poly in enumerate(obj.data.polygons):
             center = tuple(round(c, 6) for c in poly.center)
@@ -446,9 +427,7 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
         bpy.ops.object.mode_set(mode="EDIT")
         settings = context.scene.CMT.S2BSettings
         obj = settings.TargetMesh
-        arm = settings.CurrentArmature
         max_bones = settings.MaxBones
-        bone_names = [b.name for b in arm.data.bones]
 
         mesh = obj.data
         verts = mesh.vertices
@@ -513,9 +492,7 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                 region.append(vi)
 
                 # 如果超过限制，停止扩展
-                # print(len(bones))
 
-                # verts[vi].select = True
                 # 扩展邻居
                 for nei in poly_adjacency[vi]:
                     if nei not in visited:
@@ -523,23 +500,9 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
 
             groups.append((region, bones))
 
-        for index, part in enumerate(groups):
-            bones = {}
-            for i, pid in enumerate(part[0]):
-                for vid in polys[pid].vertices:
-                    v_bones = {
-                        obj.vertex_groups[g.group].name: 1
-                        for g in verts[vid].groups
-                        if obj.vertex_groups[g.group].name not in bones
-                    }
-                    bones.update(v_bones)
-            print(index, len(part[0]), len(part[1]), len(bones))
-
         normals = {}
         bpy.ops.object.mode_set(mode="OBJECT")  # 确保在对象模式
         bpy.ops.object.select_all(action="DESELECT")
-        # obj.data.use_auto_smooth = True  # 启用自动平滑 4.1版本移出，自动使用自定义法线
-        # obj.data.calc_normals_split()  # 计算默认法线,4.1版本移出，自动计算
 
         for polyIndex, poly in enumerate(obj.data.polygons):
             center = tuple(round(c, 6) for c in poly.center)
@@ -553,7 +516,6 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                 loop = obj.data.loops[li]
                 normals[key].append(loop.normal.copy())
 
-        import bmesh
 
         for index, part in enumerate(groups):
             groupName = "AutoSeparatePart" + str(index)

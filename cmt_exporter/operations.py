@@ -1,21 +1,40 @@
-import bpy
-from .utils import *
+import importlib.util
 import os
-import clr
+import shutil
+import tempfile
+import xml.dom.minidom
+from pathlib import Path
+
+import bpy
+
+from .civ6_data import AstInfo, CN6FileOps, Dictionary, List, ValueTuple, g_Mat_json
+from .enum_items import (
+    default_anm_class,
+    get_anmtype_items,
+    get_artdef_items,
+    get_ast_class_items,
+    get_geotype_items,
+    resolve_enum,
+)
 from .properties import CMT_Exporter_Settings, _report
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
-from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
-from .io_export_cn6 import *
-import tempfile
-from System.Collections.Generic import List
-import importlib.util
-import shutil
-from System import ValueTuple
+from .action_data import read_action_data
+from .scene_helpers import get_parent_armature, getAbsPathByImage, get_real_project_path
+from .templates import get_bins_template, get_members_template, get_units_template
+from .textures import compress_texture_resolution, extract_packed_textures_to_file
+from .updates import ast_dsg_update, matlist_refresh
+from .xml_utils import append_xml_fragment, find_element_by_collection_name, save_xml
+from .io_export_cn6 import do_export
+from .item_dialogs import NamedItemDialogOperator
 
 class CMT_Exporter_OT_Export(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_export"
     bl_label = "导出"
     bl_description ="导出"
+
+    def _log(self, message) -> None:
+        """供无 operator 上下文的辅助函数回传进度：报告到 Blender 界面。"""
+        self.report({'INFO'}, str(message))
 
     def export_models(self,context,data: CMT_Exporter_Settings):
         uvCount = data.UVCount
@@ -30,18 +49,41 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         
         for geo in data.GeoList:
             objSet = []
-            for mesh in geo.Geometries:
-                arm = get_parent_armature(mesh.value)
-                objSet.append(mesh.value)
+            skipped = []
+            for slot in geo.Geometries:
+                obj = slot.value
+                if obj is None:
+                    skipped.append("(空槽位)")
+                    continue
+                arm = get_parent_armature(obj)
+                if arm is None:
+                    skipped.append(obj.name)
+                    continue
+                objSet.append(obj)
                 if arm not in objSet:
                     objSet.append(arm)
-            
+            if skipped:
+                self.report({"WARNING"}, f"模型 [{geo.FileName}] 跳过未绑定骨架的网格: {', '.join(skipped)}")
+            for obj in objSet:
+                if obj.type != "MESH":
+                    continue
+                slots = obj.material_slots
+                if len(slots) == 0 or any(slot.material is None for slot in slots):
+                    self.report(
+                        {"WARNING"},
+                        f"网格 [{obj.name}] 缺少材质: Civ6 模型要求每个网格至少有一个材质",
+                    )
+                    if temppath.exists():
+                        os.remove(str(temppath))
+                    return False
             if len(objSet) == 0:
                 continue
-            do_export(str(temppath.absolute()),isTriangulation,objSet)
+            do_export(str(temppath.absolute()),isTriangulation,objSet,log=self._log)
             CN6FileOps.exportModel(str(temppath),str(Path(projpath , "Geometries" , geo.FileName + ".fgx")),uvCount,templatefile,wigfile,geo.Class)
 
-        os.remove(str(temppath))
+        if temppath.exists():
+            os.remove(str(temppath))
+        return True
     def export_animations(self,context,data: CMT_Exporter_Settings):
         anmList = data.AnimationList
         projpath = get_real_project_path(self,context)
@@ -60,12 +102,9 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
 
         return
     def export_refs(self,context,data: CMT_Exporter_Settings):
-        anmList = data.AnimationList
-        geoList = data.GeoList
         astList = data.AstList
         projpath = get_real_project_path(self,context)
         
-        script_dir = str(Path(__file__).parent)
         
         exportList = Dictionary[str, AstInfo]()
         fps = int(bpy.context.scene.render.fps / bpy.context.scene.render.fps_base)
@@ -88,8 +127,6 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     
                     tuple_value = ValueTuple[str, str](anm.value.name, duration_str)
                     anms[anm.text] = tuple_value
-            # for anm in ast.Animations:
-            #     anms[anm.text] = anm.value.name
             exportList[ast.FileName].animations = anms
             exportList[ast.FileName].behaviors = behs
             CN6FileOps.generateAst(exportList,projpath)
@@ -103,7 +140,6 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
             spec = importlib.util.spec_from_file_location("dynamic_mod", data.TexCustomExportScript)
             customscript = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(customscript)
-        geoList = data.GeoList
         materialList = Dictionary[str, Dictionary[str, str]]()
         textureDict = Dictionary[str, str]()
         deleteList = []
@@ -116,12 +152,14 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     absPath = getAbsPathByImage(bpy.data.materials[mat.FileName],tex.value)
                     if data.TextureCompressionRate != "1":
                        p = Path(absPath)
-                       absPath = compress_texture_resolution(absPath,scale=data.TextureCompressionRate,output_path=str(Path(projpath,p.name)))
+                       absPath = compress_texture_resolution(
+                           absPath,scale=data.TextureCompressionRate,
+                           output_path=str(Path(projpath,p.name)),log=self._log)
                        texName = str(Path(absPath).stem)
                        deleteList.append(absPath)
                     if absPath and  data.TexEmbededExportScript != None:
                         if "Normal" in tex.text and data.TexEmbededExportScript == "WuwaNormal" :
-                            unpackedTexs = extract_packed_textures_to_file(absPath,projpath)
+                            unpackedTexs = extract_packed_textures_to_file(absPath,projpath,log=self._log)
                             absPath = unpackedTexs["normal"]
                             texName = str(Path(absPath).stem)
                             
@@ -165,46 +203,14 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         ## 删除临时文件
         for file in deleteList:
             if os.path.exists(file):
-                print("删除临时文件",file)
+                self.report({'INFO'}, f"删除临时文件: {file}")
                 os.remove(file)
 
     def export_artdefs(self,context,data:CMT_Exporter_Settings):
-        def fill_bins(self,parentnode,doc,bin,assetname):
-            if find_element_by_collection_name(root,"Element",
-                                               "m_Name","text",
-                                               bin): return
-            temptext = get_bins_template(bin,"Body","Any",assetname)
-            fragment = xml.dom.minidom.parseString(temptext)
-            node = doc.importNode(fragment.documentElement, deep=True)
-            parentnode.appendChild(node)
-        def fill_members(self,parentnode,doc,binpath,membername):
-            if find_element_by_collection_name(root,"Element",
-                                               "m_Name","text",
-                                               membername): return
-            temptext = get_members_template(membername,binpath)
-            fragment = xml.dom.minidom.parseString(temptext)
-            node = doc.importNode(fragment.documentElement, deep=True)
-            parentnode.appendChild(node)
-            
-        def fill_untis(self,parentnode,doc,unittype,membername):
-            if find_element_by_collection_name(root,"Element",
-                                               "m_Name","text",
-                                               unittype): return
-            temptext = get_units_template(unittype,membername)
-            fragment = xml.dom.minidom.parseString(temptext)
-            node = doc.importNode(fragment.documentElement, deep=True)
-            parentnode.appendChild(node)
-            
-        def find_element_by_collection_name(parent_node,label, attrName,subName,target_name):
-            """根据 m_CollectionName 的 text 属性查找 Element"""
-            for element in parent_node.getElementsByTagName(label):
-                # 查找子节点 m_CollectionName
-                collection_names = element.getElementsByTagName(attrName)
-                if collection_names:
-                    name_attr = collection_names[0].getAttribute(subName)
-                    if name_attr == target_name:
-                        return element
-            return None
+        def insert_artdef_element(parentnode,guard_name,temptext):
+            """已存在同名 Element 则跳过，否则插入模板片段。"""
+            if find_element_by_collection_name(root,"Element","m_Name","text",guard_name): return
+            append_xml_fragment(dom,parentnode,temptext)
 
         supportedArtdefs = get_artdef_items(self,context)
         projPath = get_real_project_path(self,context)
@@ -225,13 +231,13 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     root = collection.getElementsByTagName("m_RootCollections")[0]
                     
                     pNode = find_element_by_collection_name(root,"Element","m_CollectionName","text","UnitAttachmentBins")
-                    fill_bins(self,pNode,dom,inst.Type,inst.value)
+                    insert_artdef_element(pNode,inst.Type,get_bins_template(inst.Type,"Body","Any",inst.value))
                     
                     pNode = find_element_by_collection_name(root,"Element","m_CollectionName","text","UnitMemberTypes")
-                    fill_members(self,pNode,dom,inst.Type + "/Body",inst.Type)
+                    insert_artdef_element(pNode,inst.Type,get_members_template(inst.Type,inst.Type + "/Body"))
                     
                     pNode = find_element_by_collection_name(root,"Element","m_CollectionName","text","Units")
-                    fill_untis(self,pNode,dom,inst.Type,inst.Type)
+                    insert_artdef_element(pNode,inst.Type,get_units_template(inst.Type,inst.Type))
                     
                     save_xml(dom,artdeftemplate_path)
 
@@ -284,8 +290,8 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                 self.show_validation_errors(context, errors)
                 return {"CANCELLED"}
 
-        if data.IsExportModel:
-            self.export_models(context,data)
+        if data.IsExportModel and not self.export_models(context,data):
+            return {"CANCELLED"}
 
             
         if data.IsExportAnimation:
@@ -306,52 +312,22 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
 
         return {"FINISHED"}
 
-class CMT_Exporter_OT_AddGeometry(bpy.types.Operator):
+class CMT_Exporter_OT_AddGeometry(NamedItemDialogOperator):
     bl_idname = "cmt.exporter_ot_addgeometry"
     bl_label = "新建模型文件"
-    bl_description ="新建模型文件"
+    bl_description = "新建模型文件"
+
+    name_field = "Name"
+    list_attr = "GeoList"
 
     Name: bpy.props.StringProperty(
         name="文件名",
         default=""
     )
-    error: bpy.props.StringProperty(default="")
-    def execute(self, context : bpy.types.Context):
-        if self.error:
-            self.report({'ERROR'}, "名字不合法")
-            return {'CANCELLED'}
-        data = context.scene.CMT.ExporterSettings
-        geoList = data.GeoList
-        item = geoList.add()
-        item.FileName = self.Name
+
+    def item_added(self, context, data, item, name):
         item.Class = "DecalGeometry"
-        index = len(geoList) - 1
-        data.CurrentGeoIndex = index
-        data.GeoName = self.Name
-
-        
-                
-        return {"FINISHED"}
-    def invoke(self, context, event):
-        self.Name = ""
-        self.error = ""
-        return context.window_manager.invoke_props_dialog(self)
-    
-    def check(self, context):
-            items = context.scene.CMT.ExporterSettings.GeoList
-
-            if self.Name == "":
-                self.error = "名称不能为空"
-            elif any(item.FileName == self.Name for item in items):
-                self.error = "名称已存在"
-            else:
-                self.error = ""
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "Name")
-
-        if self.error:
-            layout.label(text=self.error, icon='ERROR')
+        data.GeoName = name
     
 class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_removegeometry"
@@ -364,9 +340,7 @@ class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
         geoIndex = data.CurrentGeoIndex
         geoFileName = geoList[geoIndex].FileName
 
-        savedAstIndex = data.CurrentAstIndex
-        for ast_idx, ast in enumerate(data.AstList):
-            data.CurrentAstIndex = ast_idx
+        for ast in data.AstList:
             to_remove = []
             for i, geo_ref in enumerate(ast.Geometries):
                 if geo_ref.value == geoFileName:
@@ -375,12 +349,10 @@ class CMT_Exporter_OT_RemoveGeometry(bpy.types.Operator):
                 ast.Geometries.remove(i)
             if to_remove:
                 _report(f"已删除 Ast [{ast.FileName}] 中对模型 [{geoFileName}] 的引用")
-        data.CurrentAstIndex = savedAstIndex
 
         geoList.remove(geoIndex)
-        if geoIndex >= len(geoList) and len(geoList) > 0:
-            data.CurrentGeoIndex = len(geoList) - 1
-            data.GeoName = geoList[data.CurrentGeoIndex].FileName
+        if len(geoList) > 0:
+            data.GeoName = geoList[min(geoIndex, len(geoList) - 1)].FileName
 
         return {"FINISHED"}
 
@@ -392,18 +364,17 @@ class CMT_Exporter_OT_AddMesh(bpy.types.Operator):
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         meshList = data.GeoList[data.CurrentGeoIndex].Geometries
-        if len(context.selected_objects) == 0:
-            item = meshList.add()
-        else:
-            for obj in context.selected_objects:
-                exists = False
-                item = meshList.add()
-                for property in meshList:
-                    if property.value == obj:
-                        exists = True
-                if not exists and obj.type == "MESH":
-                     
-                    item.value = obj     
+
+        selectedMeshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if not selectedMeshes:
+            meshList.add()  # 留一个空槽位，供用户在下拉列表中手动指定网格
+            return {"FINISHED"}
+
+        alreadyListed = {item.value for item in meshList if item.value is not None}
+        for obj in selectedMeshes:
+            if obj not in alreadyListed:
+                meshList.add().value = obj
+                alreadyListed.add(obj)
         return {"FINISHED"}
     
 class CMT_Exporter_OT_RemoveMesh(bpy.types.Operator):
@@ -424,14 +395,10 @@ class CMT_Exporter_OT_AddAnimation(bpy.types.Operator):
 
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
-        animationList  = data.AnimationList
-        item = animationList.add()
-        if len(data.AstList) > 0:
-            curAst = data.AstList[data.CurrentAstIndex]
-            ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
-            allowed = get_allowed_anm_classes(ast_class)
-            if allowed:
-                item.Class = allowed[0]
+        item = data.AnimationList.add()
+        default_class = default_anm_class(data)
+        if default_class:
+            item.Class = default_class
 
         return {"FINISHED"}
     
@@ -454,13 +421,7 @@ class CMT_Exporter_OT_AddActionsByKeyword(bpy.types.Operator):
         data = context.scene.CMT.ExporterSettings
         keyword = data.ActionNameToAdd
         animationList = data.AnimationList
-        if len(data.AstList) > 0:
-            curAst = data.AstList[data.CurrentAstIndex]
-            ast_class = resolve_enum(curAst, "Class", get_ast_class_items)
-            allowed = get_allowed_anm_classes(ast_class)
-            default_class = allowed[0] if allowed else None
-        else:
-            default_class = None
+        default_class = default_anm_class(data)
         if keyword != "":
             for action in bpy.data.actions:
                 if keyword in action.name:
@@ -471,51 +432,22 @@ class CMT_Exporter_OT_AddActionsByKeyword(bpy.types.Operator):
                             item.Class = default_class
         return {"FINISHED"}
     
-class CMT_Exporter_OT_AddAst(bpy.types.Operator):
+class CMT_Exporter_OT_AddAst(NamedItemDialogOperator):
     bl_idname = "cmt.exporter_ot_addast"
     bl_label = "新建Ast"
-    bl_description ="新建Ast"
-    
+    bl_description = "新建Ast"
+
+    name_field = "AstName"
+    list_attr = "AstList"
+
     AstName: bpy.props.StringProperty(
         name="文件名",
         default=""
     )
-    error: bpy.props.StringProperty(default="")
-    def execute(self, context : bpy.types.Context):
-        if self.error:
-            self.report({'ERROR'}, "名字不合法")
-            return {'CANCELLED'}
-        data = context.scene.CMT.ExporterSettings
-        astList = data.AstList
-        item = astList.add()
-        item.FileName = self.AstName
-        index = len(astList) - 1
-        data.CurrentAstIndex = index
-        data.AstName = self.AstName
-        ast_dsg_update(item,context)
-        
-                
-        return {"FINISHED"}
-    def invoke(self, context, event):
-        self.AstName = ""
-        self.error = ""
-        return context.window_manager.invoke_props_dialog(self)
-    
-    def check(self, context):
-            items = context.scene.CMT.ExporterSettings.AstList
 
-            if self.AstName == "":
-                self.error = "名称不能为空"
-            elif any(item.FileName == self.AstName for item in items):
-                self.error = "名称已存在"
-            else:
-                self.error = ""
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "AstName")
-
-        if self.error:
-            layout.label(text=self.error, icon='ERROR')
+    def item_added(self, context, data, item, name):
+        data.AstName = name
+        ast_dsg_update(item, context)
             
 class CMT_Exporter_OT_RemoveAst(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_removeast"
@@ -525,10 +457,10 @@ class CMT_Exporter_OT_RemoveAst(bpy.types.Operator):
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         astList = data.AstList
-        astList.remove(data.CurrentAstIndex)
-        if data.CurrentAstIndex >= len(astList) and len(astList) >0  :
-            data.CurrentAstIndex = len(astList) - 1
-            data.AstName = astList[data.CurrentAstIndex].FileName
+        removedIndex = data.CurrentAstIndex
+        astList.remove(removedIndex)
+        if len(astList) > 0:
+            data.AstName = astList[min(removedIndex, len(astList) - 1)].FileName
         return {"FINISHED"}
     
 class CMT_Exporter_OT_AddRef(bpy.types.Operator):
@@ -539,15 +471,15 @@ class CMT_Exporter_OT_AddRef(bpy.types.Operator):
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         instance = data.AstList[data.CurrentAstIndex]
-        type = data.AstShowProperty
-        if type=="Geometries":
-            if len(instance.Geometries) == 0:
-                instance.Geometries.add()
+        refType = data.AstShowProperty
+        refs = getattr(instance, refType)
+        if refType == "Geometries":
+            # 几何引用最多一条：列表为空时才新增。
+            if len(refs) == 0:
+                refs.add()
             matlist_refresh(data, context)
-        elif type=="Animations":
-            instance.Animations.add()
-        elif type=="Behaviors":
-            instance.Behaviors.add()
+        else:
+            refs.add()
 
         return {"FINISHED"}
     
@@ -559,15 +491,11 @@ class CMT_Exporter_OT_RemoveRef(bpy.types.Operator):
     def execute(self, context:bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
         instance = data.AstList[data.CurrentAstIndex]
-        type = data.AstShowProperty
-        if type=="Geometries":
-            instance.Geometries.remove(instance.ActivedPropertyIndex)
+        refType = data.AstShowProperty
+        getattr(instance, refType).remove(instance.ActivedPropertyIndex)
+        if refType == "Geometries":
             matlist_refresh(data, context)
-        elif type=="Animations":
-            instance.Animations.remove(instance.ActivedPropertyIndex)
-        elif type=="Behaviors":
-            instance.Behaviors.remove(instance.ActivedPropertyIndex)
-        
+
         return {"FINISHED"}
 
 class CMT_Exporter_OT_AddArtdefRef(bpy.types.Operator):
@@ -577,6 +505,9 @@ class CMT_Exporter_OT_AddArtdefRef(bpy.types.Operator):
 
     def execute(self, context : bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
+        if len(data.ArtdefList) == 0:
+            self.report({"WARNING"}, "Artdef 列表尚未初始化：请取消勾选后再勾选「是否导出Artdef」")
+            return {"CANCELLED"}
         artdef = data.ArtdefList[data.CurrentArtdefIndex]
         artdef.Instances.add()
         
@@ -590,12 +521,18 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
 
     def execute(self, context:bpy.types.Context):
         data = context.scene.CMT.ExporterSettings
+        if len(data.ArtdefList) == 0:
+            self.report({"WARNING"}, "Artdef 列表尚未初始化：请取消勾选后再勾选「是否导出Artdef」")
+            return {"CANCELLED"}
         artdef = data.ArtdefList[data.CurrentArtdefIndex]
+        if len(artdef.Instances) == 0:
+            self.report({"WARNING"}, "没有可移除的引用")
+            return {"CANCELLED"}
         artdef.Instances.remove(artdef.ActivedPropertyIndex)
         
         return {"FINISHED"}
     
-class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
+class CMT_Exporter_OT_ModifyMatTypeByKeywords(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_modifymattypebykeywords"
     bl_label = ""
     bl_description ="按关键字修改材质类型"
@@ -608,7 +545,7 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
                 keywords = data.MaterialKeywords.lower()
                 if keywords in mat.FileName.lower():
                     mat.Class = data.MaterialTargetClass
-                    print("修改材质类型",mat.FileName)
+                    self.report({'INFO'}, f"修改材质类型: {mat.FileName}")
             
         
         

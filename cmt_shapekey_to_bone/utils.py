@@ -1,32 +1,7 @@
 import bpy
 from mathutils import Vector
 
-from collections import defaultdict
-import random
-import bmesh
-import time
-from collections import deque
-
-def remove_empty_vertex_groups(obj):
-
-    vertex_groups = obj.vertex_groups
-    groups = {r: None for r in range(len(vertex_groups))}
-    armature = obj.parent
-    for vert in obj.data.vertices:
-        for vg in vert.groups:
-            i = vg.group
-            if i in groups:
-                del groups[i]
-
-    lis = [k for k in groups]
-    lis.sort(reverse=True)
-    for i in lis:
-        if (
-            True
-            if bpy.context.scene.CMT.OTSettings.DeleteLockGroup
-            else not vertex_groups[i].lock_weight
-        ):
-            vertex_groups.remove(vertex_groups[i])
+from ..mesh_utils import remove_empty_vertex_groups
 
 
 def get_bone_items(self, context):
@@ -36,7 +11,6 @@ def get_bone_items(self, context):
     if armature and armature.type == "ARMATURE":
         for bone in armature.data.bones:
             items.append((bone.name, bone.name, ""))
-    # items.insert(0, ("", "<None>", "未选择骨骼"))
     return items
 
 def create_bone_for_vertex(armature, bone_name, rest_position, parentBone):
@@ -50,10 +24,6 @@ def create_bone_for_vertex(armature, bone_name, rest_position, parentBone):
     bone.align_roll(Vector((0, 0, 1)))
     return bone
 
-def add_keyframe(bone, frame, delta_position):
-    """在 Pose Mode 下插入关键帧"""
-    bone.location = delta_position
-    bone.keyframe_insert(data_path="location", frame=frame)
 
 def normalize(mesh, shapekeyVertexIndex, armature, influenced_indices=None):
     temp = -1
@@ -102,8 +72,6 @@ def changeNormal(obj, normals):
     current_mode = bpy.context.mode
     if current_mode != 'OBJECT':
         bpy.ops.object.mode_set(mode="OBJECT")
-    # mesh.use_auto_smooth = True
-    # mesh.calc_normals_split()
 
     loop_normals = [loop.normal.copy() for loop in mesh.loops]
 
@@ -126,34 +94,6 @@ def clamp_dot_product(dot_product):
     return max(-1.0, min(1.0, dot_product))
 
 
-def find_matching_direction(direction, direction_groups, tolerance):
-    """查找最接近的方向组
-    
-    Args:
-        direction: 要匹配的方向向量（已归一化）
-        direction_groups: 现有方向组的键集合
-        tolerance: 方向容差（0-1之间，0表示必须完全一致）
-    
-    Returns:
-        匹配的方向键，如果没有匹配则返回 None
-    """
-    best_match = None
-    best_dot = -1.0
-    threshold = 1.0 - tolerance
-    
-    for existing_direction in direction_groups:
-        dot_product = clamp_dot_product(direction.dot(Vector(existing_direction)))
-        if dot_product > threshold and dot_product > best_dot:
-            best_dot = dot_product
-            best_match = existing_direction
-    
-    return best_match
-
-
-def round_vector(vector, decimals=4):
-    """将向量四舍五入为元组，用作字典键"""
-    return tuple(round(component, decimals) for component in vector)
-
 def remove_unused_materials_data(obj):
     mesh = obj.data
 
@@ -168,7 +108,6 @@ def remove_unused_materials_data(obj):
 
 def separateSelectedPart(normals):
     bpy.ops.object.mode_set(mode="EDIT")
-    # bpy.ops.mesh.select_axis()
     bpy.ops.mesh.separate(type="SELECTED")
     # # 获取选中的物体
     selected_objects = bpy.context.selected_objects
@@ -194,4 +133,6 @@ def separateSelectedPart(normals):
     bpy.context.view_layer.objects.active = active_object
     changeNormal(active_object, normals)
     remove_empty_vertex_groups(active_object)
-    bpy.ops.object.material_slot_remove_unused()
+    # 无材质槽时该算子的 poll() 为 False,直接调用会报 context is incorrect
+    if bpy.ops.object.material_slot_remove_unused.poll():
+        bpy.ops.object.material_slot_remove_unused()

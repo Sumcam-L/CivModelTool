@@ -1,5 +1,4 @@
 import bpy
-# from .utils import get_bone_items
 
 class CMT_OT_Settings(bpy.types.PropertyGroup):
     DeleteLockGroup : bpy.props.BoolProperty(

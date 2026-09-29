@@ -65,8 +65,9 @@ def _do_reload():
 
 
 def _update_worker():
+    backup_dir = ""
     try:
-        core.download_and_install(ADDON_DIR)
+        backup_dir = core.download_and_install(ADDON_DIR)
     except Exception as e:
         core.state.status = "error"
         core.state.error_msg = str(e)
@@ -74,6 +75,8 @@ def _update_worker():
         request_redraw()
         return
     core.state.status = "idle"
+    if backup_dir:
+        print(f"[Civ6ModelTool] 本地改动已备份到: {backup_dir}")
     # 热重载必须在主线程执行
     bpy.app.timers.register(_do_reload, first_interval=0.5)
 

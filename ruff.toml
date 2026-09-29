@@ -1,0 +1,23 @@
+# ruff 配置。
+#
+# 只启用「能在本仓库长期保持全绿」的规则集，避免一开就堆出上百条噪音而无人再跑。
+#   ruff check .          # 检查
+#   ruff check --fix .    # 自动修复可修的（未使用导入等）
+#
+# 关于 print：插件里仍有相当数量的 print 用作进度/诊断输出，
+# 因此刻意不启用 flake8-print(T20)——否则规则会长期为红。
+target-version = "py313"
+line-length = 120
+
+exclude = [
+    "cmt_exporter/libs",  # pythonnet / cffi 运行时，第三方代码
+    "__pycache__",
+]
+
+[lint]
+select = ["F", "E9"]
+
+[lint.per-file-ignores]
+# System.* / NexusBuddy.* 的导入是刻意的「再导出」：
+# 其他模块统一从这里取 .NET 类型，因此本文件里没有直接使用它们。
+"cmt_exporter/civ6_data.py" = ["F401"]

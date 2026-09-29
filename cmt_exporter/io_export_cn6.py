@@ -1,82 +1,10 @@
 
 import bpy
 import bmesh
-from mathutils import Vector, Quaternion, Matrix
-from bpy_extras.io_utils import unpack_list, unpack_face_list, ExportHelper
+from mathutils import Matrix
 import math
 import array
-from bpy.props import (
-		BoolProperty,
-		FloatProperty,
-		StringProperty,
-		EnumProperty,
-		)
 
-# def getTranslationOrientation(ob):
-# 	if isinstance(ob, bpy.types.Bone):
-# 		parent = ob.parent
-# 		ob_matrix_local = ob.matrix_local.copy()
-# 		rotMatrix_z90_x90 = Matrix.Rotation(math.radians(-90), 4, 'Z') @ Matrix.Rotation(math.radians(-90.0), 4, 'Y') 
-# 		finalMat = None
-# 		if parent:
-# 			parentMat = parent.matrix_local.copy()
-# 			parentMat.invert()
-			
-# 			finalMat = parentMat @ ob_matrix_local
-# 			# finalMat = rotMatrix_z90_x90 @ finalMat
-# 		else:
-# 			fixMat = Matrix.Rotation(math.radians(-90.0), 4, 'X')
-# 			finalMat = ob_matrix_local @ fixMat
-# 			finalMat = finalMat @ rotMatrix_z90_x90
-# 		loc, rot, sca = finalMat.decompose()
-# 		if parent:
-# 			loc = rotMatrix_z90_x90 @ loc
-# 		return loc,rot,sca
-# 		# ob_matrix_local = ob.matrix_local.copy()
-# 		# ob_matrix_local.transpose()
-# 		# t = ob_matrix_local
-# 		# ob_matrix_local = Matrix([[-t[2][0], -t[2][1], -t[2][2], -t[2][3]],
-# 		# 						[t[1][0], t[1][1], t[1][2], t[1][3]],
-# 		# 						[t[0][0], t[0][1], t[0][2], t[0][3]],
-# 		# 						[t[3][0], t[3][1], t[3][2], t[3][3]]])   #x = -z z = x
-
-# 		# rotMatrix_z90_4x4 = Matrix.Rotation(math.radians(90.0), 4, 'Z')
-# 		# rotMatrix_z90_4x4.transpose()
-
-# 		# t = rotMatrix_z90_4x4 @ ob_matrix_local
-# 		# matrix = Matrix([[t[0][0], t[0][1], t[0][2], t[0][3]],
-# 		# 						[t[1][0], t[1][1], t[1][2], t[1][3]],
-# 		# 						[t[2][0], t[2][1], t[2][2], t[2][3]],
-# 		# 						[t[3][0], t[3][1], t[3][2], t[3][3]]])
-
-# 		# parent = ob.parent
-		
-# 		# if parent:
-# 		# 	parent_matrix_local = parent.matrix_local.copy()
-# 		# 	parent_matrix_local.transpose()
-# 		# 	t = parent_matrix_local
-# 		# 	parent_matrix_local = Matrix([[-t[2][0], -t[2][1], -t[2][2], -t[2][3]],
-# 		# 							[t[1][0], t[1][1], t[1][2], t[1][3]],
-# 		# 							[t[0][0], t[0][1], t[0][2], t[0][3]],
-# 		# 							[t[3][0], t[3][1], t[3][2], t[3][3]]])
-# 		# 	par_matrix = rotMatrix_z90_4x4 @ parent_matrix_local
-# 		# 	par_matrix_cpy = par_matrix.copy()
-# 		# 	par_matrix_cpy.invert()
-# 		# 	matrix = matrix @ par_matrix_cpy
-# 		# 	matrix.transpose()
-# 		# else:
-# 		# 	matrix = ob.matrix_local.copy()
-# 		# 	rotMatrix_z90_4x4 = Matrix.Rotation(math.radians(-90.0), 4, 'X')
-# 		# 	matrix = matrix @ rotMatrix_z90_4x4
-		
-# 		# loc, rot, sca = matrix.decompose()
-# 	else:
-# 		matrix = ob.matrix_world
-# 		if matrix:
-# 			loc, rot, sca = matrix.decompose()
-# 		else:
-# 			raise "error: this should never happen!"
-# 	return loc, rot,sca
 def getTranslationOrientation(ob):
 	if isinstance(ob, bpy.types.Bone):
 
@@ -181,8 +109,8 @@ def getBoneWeights(boneName, weights):
 	return vgroup_data
 
 import time
-def do_export(filename, triangulate, objectSet):
-	print ("Start CN6 Export...")
+def do_export(filename, triangulate, objectSet, log=print):
+	log("Start CN6 Export...")
 
 	file = open( filename, 'w')
 	filedata = "// CivNexus6 CN6 - Exported from Blender for import to CivNexus6\n"
@@ -191,9 +119,6 @@ def do_export(filename, triangulate, objectSet):
 		modelObs = {}
 		modelMeshes = {}
 
-		# objectSet = bpy.data.objects
-		# if use_selection:
-		# 	objectSet = bpy.context.selected_objects
 		SCALE = 100.0
 		for object in objectSet:
 
@@ -201,7 +126,7 @@ def do_export(filename, triangulate, objectSet):
 				modelObs[object.name] = object
 
 			if object.type == 'MESH':
-				print ("Getting parent for mesh: %s" % object.name)
+				log("Getting parent for mesh: %s" % object.name)
 				for modifier in object.modifiers:
 					if modifier.object is not None:
 						parentArmOb = modifier.object
@@ -243,25 +168,6 @@ def do_export(filename, triangulate, objectSet):
 			if (len(boneIds) > 1 or armOb.name != armature.bones[0].name):
 				for boneid, boneTuple in enumerate(sortedBones):
 					bone = boneTuple[0]
-					#boneDepth = boneTuple[1]
-					# rotMatrix_z90_y90 = Quaternion([0.5,-0.5,-0.5,-0.5]).to_matrix().to_4x4()
-					# rotMat_y90 = Matrix.Rotation(math.radians(90.0), 4, 'Y')
-					# # rotMatrix_z90_x90.invert()
-					# position, orientationQuat,scale = getTranslationOrientation(bone)
-					# # Get Inverse World Matrix for bone
-					# loc,rot,sca = bone.matrix_local.decompose()
-					# loc = rotMat_y90 @ loc
-					# tm = Matrix.LocRotScale(loc,rot,sca)
-
-					
-					# fixedMat = rotMatrix_z90_y90 @ tm @ Matrix.Rotation(math.radians(-90.0), 4, 'X')
-					# # print("=========")
-					
-					
-
-					# invWorldMatrix = fixedMat.copy()
-					# print(invWorldMatrix)
-					
 					position, orientationQuat = getTranslationOrientation(bone)
 
 					# Get Inverse World Matrix for bone
@@ -322,6 +228,9 @@ def do_export(filename, triangulate, objectSet):
 
 					filedata += 'mesh:"%s"\n' % meshName
 
+					slots = meshObject.material_slots
+					if len(slots) == 0 or any(slot.material is None for slot in slots):
+						raise ValueError("网格 [%s] 缺少材质,Civ6 模型要求每个网格至少有一个材质" % meshName)
 					filedata += 'materials\n'
 					for material in meshObject.data.materials:
 						filedata += '\"%s\"\n' % material.name
@@ -340,7 +249,7 @@ def do_export(filename, triangulate, objectSet):
 									weight = vertex.groups[keyVertexGroup.index].weight * 2000000
 									decodedVertexIndex = str(int(round(weight)))
 
-									print ("{}: decodedVertexIndex:{}".format(index, decodedVertexIndex))
+									log("{}: decodedVertexIndex:{}".format(index, decodedVertexIndex))
 
 									if mesh['originalTangentsBinormals'].get(decodedVertexIndex) is not None:
 										tangentsBinormals = mesh['originalTangentsBinormals'][decodedVertexIndex]
@@ -411,7 +320,7 @@ def do_export(filename, triangulate, objectSet):
 					# Get Bone Weights
 					weights = meshNormalizedWeights(meshObject, mesh)
 					vertexBoneWeights = {}
-					print (meshName)
+					log(meshName)
 
 					for boneName in boneIds.keys():
 						vgroupDataForBone = getBoneWeights(boneName, weights)
@@ -470,8 +379,6 @@ def do_export(filename, triangulate, objectSet):
 						for i, weight in enumerate(boneWeightsList):
 							runningTotal = runningTotal + weight
 
-						#print("Current Running Total")
-						#print(runningTotal)
 
 						if runningTotal != 255:
 							raise "Error: Vertex bone weights do not total 255!"
@@ -484,7 +391,7 @@ def do_export(filename, triangulate, objectSet):
 
 					filedata += "vertices\n"
 
-					print ("Write Vertices")
+					log("Write Vertices")
 					# Get unique vertex/uv coordinate combinations
 	
 					uv_layers = mesh.uv_layers
@@ -580,12 +487,6 @@ def do_export(filename, triangulate, objectSet):
 						else:
 							calculatedTangsBinormsCount += 1
 						
-						# filedata +='%.8f %.8f %.8f ' % (
-						# 	(vertCoord[0] + position[0]) * SCALE,
-						# 	(vertCoord[1] + position[1]) * SCALE,
-						# 	(vertCoord[2] + position[2]) * SCALE
-						# )
-						# vertCoord =  Matrix.Rotation(math.radians(90.0), 3, 'X') @ vertCoord
 						filedata +='%.8f %.8f %.8f ' % (
 							(vertCoord[0] + position[0]) * SCALE,
 							(vertCoord[1] + position[1]) * SCALE,
@@ -622,9 +523,9 @@ def do_export(filename, triangulate, objectSet):
 					for triangle in sortedOutputTriangles:
 						filedata += '%i %i %i %i\n' % (triangle[0],triangle[1],triangle[2], triangle[3])
 
-					print ("meshName: {}".format(meshName))
-					print ("preservedTangsBinormsCount: {}".format(preservedTangsBinormsCount))
-					print ("calculatedTangsBinormsCount: {}".format(calculatedTangsBinormsCount))
+					log("meshName: {}".format(meshName))
+					log("preservedTangsBinormsCount: {}".format(preservedTangsBinormsCount))
+					log("calculatedTangsBinormsCount: {}".format(calculatedTangsBinormsCount))
 		filedata += "end"
 		file.write(filedata)
 		file.flush()
@@ -635,8 +536,8 @@ def do_export(filename, triangulate, objectSet):
 		file.flush()
 		file.close()
 		raise
-	print("耗时：",time.time() - start)
-	print ("End CN6 Export.")
+	log(f"耗时：{time.time() - start:.2f}")
+	log("End CN6 Export.")
 	return ""
 
 

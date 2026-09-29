@@ -44,8 +44,7 @@ class CMT_S2B_PT_Panel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Civ6ModelTool"
     
-    @staticmethod
-    def draw_covertion_options(layout, context) -> None:
+    def draw_covertion_options(self, layout, context) -> None:
         data = context.scene.CMT.S2BSettings
         box = layout.box()
         box.label(text = "自动转换",icon= "FRAME_NEXT")
@@ -73,8 +72,7 @@ class CMT_S2B_PT_Panel(bpy.types.Panel):
             "cmt.s2b_ot_clearshapekey", text="卸载形态键动画并恢复形态键"
         )
             
-    @staticmethod
-    def draw_separation_options(layout, context) -> None:
+    def draw_separation_options(self, layout, context) -> None:
         data = context.scene.CMT.S2BSettings
         box = layout.box()
         box.label(text = "分割模型",icon= "OUTLINER_OB_MESH")
@@ -91,7 +89,6 @@ class CMT_S2B_PT_Panel(bpy.types.Panel):
     # 自定义界面布局
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
         
         self.draw_covertion_options(layout,context)
         self.draw_separation_options(layout,context)

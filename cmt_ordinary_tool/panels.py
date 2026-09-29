@@ -1,5 +1,6 @@
 import bpy
-from .utils import *
+
+from .utils import get_bind_count, get_bone_binding_count, get_empyt_count
 class CMT_OT_PT_Panel(bpy.types.Panel):
     bl_label = "工具"
     bl_idname = "CMT_OT_PT_Panel"
@@ -7,16 +8,13 @@ class CMT_OT_PT_Panel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Civ6ModelTool"
 
-    @staticmethod
     def draw_info_panel(self, context) -> None:
-        scene = context.scene
         layout = self.layout
         obj = context.object
         
         box = layout.box()
         box.label(text="模型信息",icon = "INFO")
         column = box.column()
-        # column.use_property_split = True
         column.label(text="单位模型骨骼绑定限制: 60")
         column.label(text="领袖模型骨骼绑定限制: 256")
         if obj and obj.type == "MESH":
@@ -33,13 +31,12 @@ class CMT_OT_PT_Panel(bpy.types.Panel):
                 column.label(text="当前不处于网格编辑模式")
             else:
                 bindCount = get_bind_count()
-                if bindCount == None:
+                if bindCount is None:
                     column.label(text="当前活动物体没有骨架")
                 else:
                     column.label(text=f"当前选中部分绑定骨骼数量: {bindCount}")
         else:
             column.label(text="未选中网格物体")
-    @staticmethod
     def draw_operation_panel(self, context) -> None:
         data =  context.scene.CMT.OTSettings
         layout = self.layout
@@ -48,7 +45,6 @@ class CMT_OT_PT_Panel(bpy.types.Panel):
         box = layout.box()
         box.label(text="操作",icon="MODIFIER")
         column = box.column()
-        # column.use_property_split = True
         if obj and obj.type == "MESH":
             column.prop(data, "DeleteLockGroup")
             column.operator("cmt.ot_ot_removeemptyvertexgroups", text="删除空顶点组")
@@ -58,7 +54,5 @@ class CMT_OT_PT_Panel(bpy.types.Panel):
             column.operator("cmt.ot_ot_removeemptyshapekeys", text="删除空形态键")
     # 自定义界面布局
     def draw(self, context):
-        layout = self.layout
-        obj = context.object
-        self.draw_info_panel(self,context)
-        self.draw_operation_panel(self,context)
+        self.draw_info_panel(context)
+        self.draw_operation_panel(context)

@@ -1,20 +1,33 @@
+import os
+
 import bpy
-from .utils import *
+
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
-from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items, fuzzy_match_material_class
-
-
-class CMT_Exporter_OT_ReportWarning(bpy.types.Operator):
-    bl_idname = "cmt.exporter_ot_reportwarning"
-    bl_label = "Report Warning"
-    bl_options = {'REGISTER'}
-
-    message: bpy.props.StringProperty()
-
-    def execute(self, context):
-        if self.message:
-            self.report({'WARNING'}, self.message)
-        return {"FINISHED"}
+from .civ6_data import g_DSG_json, g_Mat_json
+from .enum_items import (
+    ARTDEF_FILES,
+    fuzzy_match_material_class,
+    get_anmtype_items,
+    get_artdef_items,
+    get_ast_DSG_items,
+    get_ast_class_items,
+    get_ast_files,
+    get_astgeometries_items,
+    get_geo_files,
+    get_geotype_items,
+    get_material_class_items,
+    mat_poll,
+    resolve_enum,
+)
+from .selection import index_of_filename, index_of_name
+from .updates import (
+    ast_dsg_update,
+    customscript_path_update,
+    export_artdef_update,
+    export_material_update,
+    matlist_refresh,
+    project_path_update,
+)
 
 
 def _report(msg):
@@ -65,7 +78,6 @@ def anm_class_changed(self, context):
                 _report(f"类型不匹配，已删除 Ast [{ast.FileName}] 中对该动画的引用")
 
 def geometry_poll(self,obj):
-    # data = bpy.context.scene.CMT.ExporterSettings
     data = bpy.context.scene.CMT.ExporterSettings
     meshList = data.GeoList[data.CurrentGeoIndex].Geometries
     if obj.type == "MESH":
@@ -98,7 +110,6 @@ class CMT_Exporter_PG_Animationlist(bpy.types.PropertyGroup):
 class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
     
     def textureInstance_automatch_texture(self,context):
-        data = context.scene.CMT.ExporterSettings
         def find_target_input(node,target):
             def find_to_rigth(node):
                 linkedNodes = []
@@ -135,7 +146,6 @@ class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
                     break
     def get_texture_items(self,context):
     
-        data = context.scene.CMT.ExporterSettings
         items = []
         items.append(("None","None",""))
         for node in bpy.data.materials[self.matName].node_tree.nodes:
@@ -158,6 +168,8 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
         data = context.scene.CMT.ExporterSettings
         for geo in data.GeoList:
             for prop in geo.Geometries:
+                if prop.value is None:
+                    continue
                 for mat in prop.value.data.materials:
                         if mat.name == target:
                             return resolve_enum(geo, "Class", get_geotype_items)
@@ -194,15 +206,6 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
 class CMT_Exporter_PG_AstProperty(bpy.types.PropertyGroup):
     value:bpy.props.EnumProperty(items=[("","","")])
 
-
-
-def astgeometry_poll(self,obj):
-    data = bpy.context.scene.CMT.ExporterSettings
-    for geo in data.GeoList:
-        for mesh in geo.Geometries:
-            if mesh.value is obj:
-                return True   
-    return False
 
 def astanimation_poll(self,obj):
     data = bpy.context.scene.CMT.ExporterSettings
@@ -258,15 +261,34 @@ def ast_class_update_dsg(self, context):
 
 class CMT_Exporter_PG_Ast(bpy.types.PropertyGroup):
     FileName : bpy.props.StringProperty()
-    # Class : bpy.props.StringProperty(default="Unit")
     Class : bpy.props.EnumProperty(name="类型", description="类型", translation_context = "CMT",items=get_ast_class_items,update=ast_class_update_dsg)
     DSG : bpy.props.EnumProperty(name="DSG", description="DSG", translation_context="", items=get_ast_DSG_items,update=ast_dsg_update)
-    # DSG : bpy.props.StringProperty(default="potential_any_graph")
     Geometries:bpy.props.CollectionProperty(type=CMT_Exporter_PG_AstGeometryProperty)
     Animations:bpy.props.CollectionProperty(type=CMT_Exporter_PG_AstAnimationProperty)
     Behaviors:bpy.props.CollectionProperty(type=CMT_Exporter_PG_AstProperty)
     ActivedPropertyIndex:bpy.props.IntProperty(default=0)
     
+
+def current_geo_index(self):
+    """当前模型文件的列表下标。由 GeoName 推导，避免列表下标与选择项两份状态互相漂移。"""
+    return index_of_filename(self.GeoList, self.GeoName)
+
+
+def current_ast_index(self):
+    """当前 Ast 的列表下标。由 AstName 推导。"""
+    return index_of_filename(self.AstList, self.AstName)
+
+
+def current_artdef_index(self):
+    """当前 Artdef 的下标。由 ArtdefName 推导。"""
+    return index_of_name(ARTDEF_FILES, self.ArtdefName)
+
+
+def current_mat_index(self):
+    """当前材质在 MaterialList 中的下标。由 MaterialName 推导。"""
+    material = self.MaterialName
+    return index_of_filename(self.MaterialList, material.name if material else "")
+
 
 class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     ProjectPath:bpy.props.StringProperty(
@@ -287,7 +309,6 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     IsGenerateRef : bpy.props.BoolProperty(
         name="引用文件设置", description="是否生成引用所导出资产的文件",default=False
     )
-    ModelType:bpy.props.EnumProperty(name="模型导出类型", translation_context = "CMT" ,description="模型导出类型",items=get_geotype_items,default=6)
     
     ##模型设置
     UVCount: bpy.props.IntProperty(
@@ -302,28 +323,14 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
         description="是否在导出前对模型三角化，模型已是三角面的情况无需勾选",
         default=False
     )
-    # MeshList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_GeometryList)
     GeoList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_GeometryList)
     
-    GeoName : bpy.props.EnumProperty(name="文件名", description="文件名", translation_context="",items=get_geo_files,update = geo_filename_update)
-    # GeoClass : bpy.props.EnumProperty(
-    #     name="类型", description="类型",items=get_geotype_items,update = geo_class_update,translation_context = "CMT",default=6
-    # )
-    CurrentGeoIndex: bpy.props.IntProperty(default=0 )
+    GeoName : bpy.props.EnumProperty(name="文件名", description="文件名", translation_context="",items=get_geo_files)
+    CurrentGeoIndex: bpy.props.IntProperty(get=current_geo_index)
     
     
-    ModelFileName : bpy.props.StringProperty(
-        name="模型文件名", description="模型文件名"
-    )
     
     ##动画设置
-    OverSampling: bpy.props.IntProperty(
-        name="采样率",
-        description="控制采样数据的精度，每(1/采样率)帧采样一次数据，一般默认即可",
-        default=1,
-        min=0,
-        max=10,
-    )
     Compress: bpy.props.BoolProperty(
         name="压缩动画",
         description="压缩动画",
@@ -338,15 +345,9 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     #引用文件设置
     
     #Ast部分
-    CurrentAstIndex : bpy.props.IntProperty(default=0)
+    CurrentAstIndex : bpy.props.IntProperty(get=current_ast_index)
     AstList : bpy.props.CollectionProperty(type=CMT_Exporter_PG_Ast)
-    AstName : bpy.props.EnumProperty(name="文件名", description="文件名", translation_context="",items=get_ast_files,update = ast_filename_update)
-    AstClass : bpy.props.EnumProperty(
-        name="类型", description="类型", translation_context = "CMT",items=get_ast_class_items,update = ast_class_update
-    )
-    AstDSG : bpy.props.EnumProperty(
-        name="DSG", description="DSG", translation_context="", items=get_ast_DSG_items,
-    update = ast_dsg_update)
+    AstName : bpy.props.EnumProperty(name="文件名", description="文件名", translation_context="",items=get_ast_files)
     AstShowProperty: bpy.props.EnumProperty(
         name="选择引用类型", description="选择引用类型", items=[("Geometries","模型引用",""),("Animations","动画引用",""),("Behaviors","行为引用","")])
     
@@ -361,17 +362,16 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     )
     ArtdefName:bpy.props.EnumProperty(
         name="Artdef文件名", description="支持的Artdef", translation_context="", 
-        items=get_artdef_items,
-        update = artdef_name_update)
+        items=get_artdef_items)
     
-    CurrentArtdefIndex : bpy.props.IntProperty(default=0)
+    CurrentArtdefIndex : bpy.props.IntProperty(get=current_artdef_index)
     
     ArtdefList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_Artdef)
     
     MaterialName :bpy.props.PointerProperty(
-        name="材质名", description="材质名",type=bpy.types.Material,poll = mat_poll,update = mat_name_update
+        name="材质名", description="材质名",type=bpy.types.Material,poll = mat_poll,update = matlist_refresh
     )
-    CurrentMatIndex : bpy.props.IntProperty(default=0)
+    CurrentMatIndex : bpy.props.IntProperty(get=current_mat_index)
     
     MaterialList:bpy.props.CollectionProperty(type=CMT_Exporter_PG_Material)
     
@@ -404,6 +404,5 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     
     
     
-    # AstList: bpy.props.CollectionProperty(type=FgxExporter)
     
 

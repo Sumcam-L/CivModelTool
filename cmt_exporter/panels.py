@@ -1,7 +1,6 @@
 import bpy
-from .utils import g_DSGs_action
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
-from .utils import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
+from .enum_items import resolve_enum, get_ast_class_items, get_geotype_items, get_anmtype_items
 from .properties import CMT_Exporter_Settings,CMT_Exporter_PG_AstAnimationProperty,CMT_Exporter_PG_AstGeometryProperty
 
 class CMT_Exporter_PT_Panel(bpy.types.Panel):
@@ -26,17 +25,15 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
         column.enabled = data.IsExportAnimation or data.IsExportModel or data.IsGenerateRef
         column.operator("cmt.exporter_ot_export")
         
-    @staticmethod
-    def draw_general_options(layout, context) -> None:
+    def draw_general_options(self, layout, context) -> None:
         data = context.scene.CMT.ExporterSettings
         box = layout.box()
         
         box.label(text = "常规设置",icon= "SETTINGS")
         column = box.column()
         column.prop(data,"ProjectPath")
-        # column.prop(data,"ModelType")
 
-    def draw_model_options(self,layout, context) -> None:
+    def draw_model_options(self, layout, context) -> None:
         data = context.scene.CMT.ExporterSettings
         box = layout.box()
 
@@ -50,7 +47,6 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             
             innerBox = column.box()
             col = innerBox.column()
-            # column.prop(data,"ModelFileName")
             
             addOrRemoveRow = col.row(align=True)
             addOrRemoveRow.operator("cmt.exporter_ot_addgeometry", icon="ADD")
@@ -67,12 +63,9 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                 column.separator()
                 column.prop(data,"UVCount")
                 column.prop(data,"IsTriangulation")
-    @staticmethod
-    def draw_animation_options(layout, context) -> None:
+    def draw_animation_options(self, layout, context) -> None:
         data = context.scene.CMT.ExporterSettings
         box = layout.box()
-        # box.label(text = "动画",icon= "ACTION")
-        # row = box.row()
         box.prop(data,"IsExportAnimation",icon = "ACTION")
         box.enabled = data.ProjectPath != ""
         if data.IsExportAnimation:
@@ -89,11 +82,9 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             underRow.prop(data,"ActionNameToAdd")
             underRow.operator("cmt.exporter_ot_addactionsbykeyword")
             column.separator()
-            # column.prop(data,"OverSampling")
             column.prop(data,"Compress")
                 
-    @staticmethod
-    def draw_ref_options(layout, context) -> None:
+    def draw_ref_options(self, layout, context) -> None:
         data = context.scene.CMT.ExporterSettings
         box = layout.box()
         box.prop(data,"IsGenerateRef",icon = "FILE")
@@ -102,7 +93,6 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
             splited_box1= box.split(factor=0.02)
             splited_box1.column()
             col : bpy.types.UILayout = splited_box1.column()
-            # col.label(text="Ast导出列表",icon="META_CUBE")
             col.prop(data,"IsExportAst",icon="META_CUBE")
             if  data.IsExportAst:
                 astBox = col.box()
@@ -118,7 +108,6 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                     data, "AstName",translate=False)
                     astCol.prop(curAst,"Class",translate=False)
                     astCol.prop(curAst,"DSG",translate=False)
-                    # astCol.prop(data,"AstDSG",translate=False)
                     astProperties = astCol.row(align=True)
                     astProperties.prop(data,"AstShowProperty",expand=True)
                     
@@ -133,7 +122,6 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                     if propName == "Animations":
                         sidebar.enabled = False
                         astCol.operator("cmt.exporter_ot_matchanimations", text="一键匹配动画", icon="ACTION")
-                    # col.separator()
                     
             col.prop(data,"IsExportMaterial",icon="MATERIAL")
             matCol = col.column()
@@ -161,9 +149,8 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
                 scriptCol.prop(data,"TexCustomExportScript")
                 scriptCol.enabled = data.IsExportMaterial and has_geo
             col.prop(data,"IsExportArtdef",icon="ASSET_MANAGER")
-            # col.prop(data,"IsExportArtdef")
             artdefCol = col.column()
-            if data.IsExportArtdef:
+            if data.IsExportArtdef and len(data.ArtdefList) > 0:
                 artdefCol.prop(data,"ArtdefName")
                 curArtdef = data.ArtdefList[data.CurrentArtdefIndex]
                 
@@ -180,10 +167,6 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
 class CMT_Exporter_UL_MeshList(bpy.types.UIList):
     def draw_item(self, context, layout, data : CMT_Exporter_Settings, item, icon, active_data, active_propname,index):
 
-        # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-        # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
-        # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-        # Note "data" names should never be translated!
         row = layout.row()
 
         split = row.split(factor=0.1 )
@@ -193,10 +176,6 @@ class CMT_Exporter_UL_MeshList(bpy.types.UIList):
         
 class CMT_Exporter_UL_AnimationList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
-        # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-        # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
-        # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-        # Note "data" names should never be translated!
         row = layout.row()
 
         split = row.split(factor=0.15 )
@@ -249,10 +228,6 @@ class CMT_Exporter_UL_AstPropertiesList(bpy.types.UIList):
         
 class CMT_Exporter_UL_TextureList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
-        # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-        # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
-        # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-        # Note "data" names should never be translated!
         row = layout.row()
 
         split = row.split(factor=0.15 )
@@ -262,14 +237,9 @@ class CMT_Exporter_UL_TextureList(bpy.types.UIList):
         
 class CMT_Exporter_UL_ArtdefReferenceList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
-        # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-        # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
-        # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-        # Note "data" names should never be translated!
         row = layout.row()
 
         split = row.split(factor=0.5)
         
         split.prop(item,"Type")
-        # split.label(text=item.text,text_ctxt = "CMT")
         split.prop(item,"value")

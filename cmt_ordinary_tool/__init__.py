@@ -1,35 +1,17 @@
-import bpy
-import inspect
 from . import panels
 from . import properties
 from . import operations
 
+from ..registration import register_modules, unregister_modules
 
-modules = [panels,properties,operations]
-
-def get_classes_from_module(module):
-    classes = []
-
-    for name, obj in module.__dict__.items():
-        if isinstance(obj, type) and obj.__module__ == module.__name__:
-            classes.append(obj)
-
-    return classes
-
+modules = [panels, properties, operations]
 
 def register() -> None:
-    for module in modules:
-        classes = get_classes_from_module(module)
-        for tClass in classes:
-            # print("注册：",module.__name__ + " " + tClass.__name__)
-            bpy.utils.register_class(tClass)
+    register_modules(modules)
 
 
 def unregister() -> None:
-    for module in modules:
-        classes = get_classes_from_module(module)
-        for tClass in classes:
-            bpy.utils.unregister_class(tClass)
+    unregister_modules(modules)
 
 
 if __name__ == "__main__":

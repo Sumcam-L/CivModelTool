@@ -230,12 +230,11 @@ class CMT_Exporter_UL_TextureList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):
         row = layout.row()
 
-        split = row.split(factor=0.15 )
-
+        # 保持原来的两段结构，通道下拉直接挂在行尾；实测 0.2 / 0.5 / 0.25 上下最匀
+        split = row.split(factor=0.2)
         split.label(text=item.text,text_ctxt = "CMT")
-        channel_split = split.split(factor=0.3)
-        channel_split.prop(item,"value",text="")
-        channel_split.prop(item,"Channel",text="")
+        split.prop(item,"value",text="")
+        row.prop(item,"Channel",text="")
         
 class CMT_Exporter_UL_ArtdefReferenceList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):

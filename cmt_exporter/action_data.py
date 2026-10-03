@@ -7,6 +7,19 @@ from mathutils import Euler, Matrix, Quaternion, Vector
 
 from .civ6_data import Array, BoneData, Dictionary, Single
 
+# Blender 的 slot 显示名默认跟随它绑定的 ID（这里是骨架对象）。
+# 但自己建 slot 时它会保持成 "Slot_" 开头的自定义名，
+# 那种名字只是 slot 的命名，不是骨架名，去掉前缀才是目标骨架。
+SLOT_NAME_PREFIX = "Slot_"
+
+
+def resolve_skeleton_name(slot_name):
+    """把动画 slot 的显示名解析成目标骨架对象名。"""
+    if slot_name.startswith(SLOT_NAME_PREFIX) and len(slot_name) > len(SLOT_NAME_PREFIX):
+        return slot_name[len(SLOT_NAME_PREFIX):]
+    return slot_name
+
+
 def read_action_data(action_name):
     action = bpy.data.actions.get(action_name)
     if not action:
@@ -27,14 +40,23 @@ def read_action_data(action_name):
 
             for bag in strip.channelbags:
 
-                
                 slot_name = bag.slot.name_display
+                arm_name = resolve_skeleton_name(slot_name)
+                arm_obj = bpy.data.objects.get(arm_name)
+                if (not arm_obj or arm_obj.type != 'ARMATURE') and arm_name != slot_name:
+                    # 去前缀后找不到骨架，退回原名再试一次，
+                    # 免得真有骨架就叫 "Slot_xxx" 时反而导不出来。
+                    arm_name = slot_name
+                    arm_obj = bpy.data.objects.get(arm_name)
+                if not arm_obj or arm_obj.type != 'ARMATURE':
+                    continue
+
+                # 键名必须是骨架对象名，模型侧的世界骨就是用对象名写的，
+                # 两边不一致动画绑不到模型上。
+                slot_name = arm_name
                 cs_bones_dict = Dictionary[str, BoneData]()
                 cs_root[slot_name] = cs_bones_dict
 
-                arm_obj = bpy.data.objects.get(slot_name)
-                if not arm_obj or arm_obj.type != 'ARMATURE':
-                    continue
                 pose_bones = arm_obj.pose.bones
                 rest_bones = arm_obj.data.bones
 

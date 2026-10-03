@@ -12,6 +12,13 @@ from pathlib import Path
 _ASSETS_DIR = Path(__file__).parent / "assets"
 _DEPENDENCIES_DIR = Path(__file__).parent / "dependencies"
 _DLLS_TO_CHECK = [
+    # Firaxis.Utility 的嵌入式资源要走 ResourceManager，需要这几个 BCL 装配体先就位
+    "System.Resources.Extensions",
+    "System.Memory",
+    "System.Buffers",
+    "System.Numerics.Vectors",
+    "System.Runtime.CompilerServices.Unsafe",
+    "Firaxis.MathEx",
     "Firaxis.Utility",
     "Firaxis.Granny",
     "Firaxis.Granny.Impl",

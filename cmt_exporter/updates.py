@@ -36,10 +36,10 @@ def customscript_path_update(self,context):
         self.layout.label(text="请选择Python脚本")
 
     data = context.scene.CMT.ExporterSettings
-    if data.TxtCustomExportScript != "":
-        extension = Path(data.TxtCustomExportScript).suffix
+    if data.TexCustomExportScript != "":
+        extension = Path(data.TexCustomExportScript).suffix
         if extension != ".py":
-            data.TxtCustomExportScript = ""
+            data.TexCustomExportScript = ""
             context.window_manager.popup_menu(draw, title="提示", icon='ERROR')
 
 def matlist_refresh(self, context):

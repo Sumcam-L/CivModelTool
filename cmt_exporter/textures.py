@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import bpy
+import numpy as np
 
 def compress_texture_resolution(image, scale=0.5, output_path=None, max_width=4096, max_height=4096,
                                min_width=4, min_height=4, require_pow2=True, require_square=False,
@@ -143,3 +144,58 @@ def extract_packed_textures_to_file(input_path, output_dir=None, log=print):
     total_elapsed = time.time() - total_start
     log(f"分解鸣潮法线贴图耗时: {total_elapsed:.2f}s")
     return result
+
+def extract_alpha_to_file(input_path, output_dir=None, output_path=None, invert=False, log=print):
+    """把贴图的 alpha 通道抽成独立灰度贴图（R=G=B=alpha，A=1）。
+
+    与 extract_packed_textures_to_file 的差异：这里不做 1-alpha 取反。
+    alpha 本身就是不透明度，直接取值才是通用语义；取反只是鸣潮那套
+    "alpha 存 roughness" 打包约定的需要。
+
+    input_path: 源图片路径
+    output_dir: 输出目录（output_path 优先，缺省则与源图同目录）
+    output_path: 完整输出路径
+    invert: 存疑语义时的逃生口，写 1-alpha
+    返回: 输出文件路径；源图没有 alpha 通道时返回 None
+    """
+    if output_path is None:
+        p = Path(input_path)
+        target_dir = output_dir if output_dir is not None else p.parent
+        output_path = str(Path(target_dir) / (p.stem + "_Alpha" + p.suffix))
+
+    image = bpy.data.images.load(input_path)
+    try:
+        if not image.depth in (32, 64):
+            log(f"跳过 alpha 提取（源图无 alpha 通道）: {input_path}")
+            return None
+
+        width, height = image.size[0], image.size[1]
+        if not width or not height:
+            log(f"跳过 alpha 提取（源图尺寸为 0）: {input_path}")
+            return None
+
+        pixels = np.empty(width * height * 4, dtype=np.float32)
+        image.pixels.foreach_get(pixels)
+        alpha = pixels.reshape(-1, 4)[:, 3]
+        if invert:
+            alpha = 1.0 - alpha
+
+        out_pixels = np.empty((width * height, 4), dtype=np.float32)
+        out_pixels[:, 0] = alpha
+        out_pixels[:, 1] = alpha
+        out_pixels[:, 2] = alpha
+        out_pixels[:, 3] = 1.0
+
+        out = bpy.data.images.new(Path(output_path).stem, width=width, height=height, alpha=False)
+        try:
+            # 灰度数据是数据而非颜色，关掉色彩空间转换避免二次映射
+            out.colorspace_settings.name = "Non-Color"
+            out.pixels.foreach_set(out_pixels.ravel())
+            out.filepath_raw = output_path
+            out.file_format = "PNG"
+            out.save()
+        finally:
+            bpy.data.images.remove(out)
+    finally:
+        bpy.data.images.remove(image)
+    return output_path

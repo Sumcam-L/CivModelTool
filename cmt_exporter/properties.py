@@ -107,6 +107,55 @@ class CMT_Exporter_PG_Animationlist(bpy.types.PropertyGroup):
         type=bpy.types.Action,poll=animation_poll )
     Class:bpy.props.EnumProperty(name="",description="类型",items=get_anmtype_items,translation_context = "CMT",default=3,update=anm_class_changed)
 
+# items 用静态元组而不是回调：回调式 enum 的 default 只能是整数下标，
+# 而这里需要按标识符 "BaseColor" 给出默认值。
+TEXTURE_CHANNEL_ITEMS = (
+    ("BaseColor","整图","直接导出这张贴图，不做处理"),
+    ("Alpha","Alpha通道","导出时把该贴图的 alpha 通道抽成独立灰度贴图"),
+)
+
+# 只有这些槽位名会被自动回填。Enum 本身对任何槽都可用（用户可手动改），
+# 但自动回填必须保守：DecalMaterial 的首个空槽是 Heightmap（视差贴图），
+# 把不透明图塞进去是错的。
+AUTO_FILL_ALPHA_SLOTS = ("opacity", "alpha", "cutout", "mask")
+
+def _bsdf_node(material):
+    if material is None or not material.use_nodes or material.node_tree is None:
+        return None
+    return next((n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+
+def find_alpha_source(material):
+    """找出喂给 BSDF Alpha 口、且来自图节点 Alpha 输出口的那张图。
+
+    返回 image，找不到返回 None。判定只看图不看槽位名，这样没有 Opacity
+    槽的材质类（Unit、DecalMaterial 等）同样能用上。
+    """
+    bsdf = _bsdf_node(material)
+    if bsdf is None:
+        return None
+    for link in bsdf.inputs["Alpha"].links:
+        if link.from_node.type == "TEX_IMAGE" and link.from_socket.name == "Alpha":
+            return link.from_node.image
+    return None
+
+def detect_texture_channel(material,image_name):
+    """这张图在节点图里是不是同时被当不透明图用。
+
+    True 表示它的 alpha 正接着 BSDF 的 Alpha 口，而它的 Color 接的是
+    Base Color —— 即「单张 RGBA 图当不透明图」那条流程。
+    """
+    image = find_alpha_source(material)
+    if image is None or not image_name or image_name == "None":
+        return False
+    if image.name != image_name:
+        return False
+    bsdf = _bsdf_node(material)
+    for link in bsdf.inputs["Alpha"].links:
+        if link.from_node.type == "TEX_IMAGE" and link.from_socket.name == "Color":
+            # Color -> Alpha 说明用户已经备好独立灰度图了，不该再抽一次
+            return False
+    return True
+
 class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
     
     def textureInstance_automatch_texture(self,context):
@@ -153,11 +202,35 @@ class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
                 name = node.image.name
                 items.append((name,name,os.path.normpath(bpy.path.abspath(node.image.filepath))))
         return items
-                
+
+    def autofill_alpha_slot(self,texture_group):
+        """把 texture_group 里第一个 alpha 类空槽位填成「用 alpha 通道」。
+
+        texture_group 是 CMT_Exporter_PG_Material.Textures 这类集合。
+        只在槽位生成时跑一次，之后交给用户手动改。
+
+        曾经把检测挂在 value 的回调上，结果 BaseColor 行也被标成 Alpha ——
+        BaseColor 行和 Opacity 行可能指向同一张图，光看图分不清谁是谁。
+        """
+        material = bpy.data.materials.get(self.matName)
+        image = find_alpha_source(material)
+        if image is None or not detect_texture_channel(material, image.name):
+            return
+        for tex in texture_group:
+            if tex.value not in ("", "None"):
+                continue
+            if tex.text.lower() not in AUTO_FILL_ALPHA_SLOTS:
+                continue
+            tex.value = image.name
+            tex.Channel = "Alpha"
+            return
+
     matName : bpy.props.StringProperty()
     Class : bpy.props.StringProperty()
     text:bpy.props.StringProperty(update=textureInstance_automatch_texture)
     value:bpy.props.EnumProperty(name="贴图",description="选择贴图",items=get_texture_items)
+    Channel:bpy.props.EnumProperty(name="通道",description="导出这张贴图的哪一部分：整图或 alpha 通道",
+                                  items=TEXTURE_CHANNEL_ITEMS,default="BaseColor",translation_context = "CMT")
     
     
                     
@@ -191,6 +264,9 @@ class CMT_Exporter_PG_Material(bpy.types.PropertyGroup):
                 tex.matName = self.FileName
                 tex.Class = self.Class
                 tex.text = key
+        material = bpy.data.materials.get(self.FileName)
+        if material is not None and len(self.Textures):
+            self.Textures[0].autofill_alpha_slot(self.Textures)
     FileName:bpy.props.StringProperty(update=materialInstance_name_update)
     Class:bpy.props.EnumProperty(name="类型",description="选择材质类型",translation_context="CMT",items=get_material_class_items,update=mat_class_update,default=0)
     Textures:bpy.props.CollectionProperty(type=CMT_Exporter_PG_Texture)

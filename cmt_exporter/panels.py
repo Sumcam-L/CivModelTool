@@ -233,7 +233,9 @@ class CMT_Exporter_UL_TextureList(bpy.types.UIList):
         split = row.split(factor=0.15 )
 
         split.label(text=item.text,text_ctxt = "CMT")
-        split.prop(item,"value",text="")
+        channel_split = split.split(factor=0.3)
+        channel_split.prop(item,"value",text="")
+        channel_split.prop(item,"Channel",text="")
         
 class CMT_Exporter_UL_ArtdefReferenceList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname,index):

@@ -21,7 +21,7 @@ from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
 from .action_data import read_action_data
 from .scene_helpers import get_parent_armature, getAbsPathByImage, get_real_project_path
 from .templates import get_bins_template, get_members_template, get_units_template
-from .textures import compress_texture_resolution, extract_packed_textures_to_file
+from .textures import compress_texture_resolution, extract_alpha_to_file, extract_packed_textures_to_file
 from .updates import ast_dsg_update, matlist_refresh
 from .xml_utils import append_xml_fragment, find_element_by_collection_name, save_xml
 from .io_export_cn6 import do_export
@@ -157,8 +157,16 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                            output_path=str(Path(projpath,p.name)),log=self._log)
                        texName = str(Path(absPath).stem)
                        deleteList.append(absPath)
+                    if absPath and tex.Channel == "Alpha":
+                       # 槽位要的是这张图的 alpha：抽成独立灰度图再导。
+                       # 放在压缩之后，让压缩率对灰度图同样生效。
+                       unpackedAlpha = extract_alpha_to_file(absPath, projpath, log=self._log)
+                       if unpackedAlpha:
+                           absPath = unpackedAlpha
+                           texName = str(Path(absPath).stem)
+                           deleteList.append(unpackedAlpha)
                     if absPath and  data.TexEmbededExportScript != None:
-                        if "Normal" in tex.text and data.TexEmbededExportScript == "WuwaNormal" :
+                        if "Normal" in tex.text and data.TexEmbededExportScript == "WuwaNormal" and tex.Channel != "Alpha":
                             unpackedTexs = extract_packed_textures_to_file(absPath,projpath,log=self._log)
                             absPath = unpackedTexs["normal"]
                             texName = str(Path(absPath).stem)

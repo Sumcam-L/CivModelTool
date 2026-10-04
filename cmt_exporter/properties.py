@@ -481,6 +481,10 @@ class CMT_Exporter_Settings(bpy.types.PropertyGroup):
     MaterialKeywords:bpy.props.StringProperty(name="材质关键字", description="材质关键字",default="")
     MaterialTargetClass:bpy.props.EnumProperty(name="目标材质类型",description="选择目标材质类型",translation_context="CMT",items=get_material_class_items,default=0)
     
+    OverwriteTextures:bpy.props.BoolProperty(
+        name="覆盖已有贴图", description="自动匹配贴图时连已有值一起重算",default=False
+    )
+    
     
     
     TexCustomExportScript:bpy.props.StringProperty(

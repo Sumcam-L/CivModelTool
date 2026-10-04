@@ -138,6 +138,8 @@ class CMT_Exporter_PT_Panel(bpy.types.Panel):
 
                             matCol.template_list("CMT_Exporter_UL_TextureList", "", curMat, "Textures", curMat,  "ActivedPropertyIndex",maxrows=10)
 
+                    matCol.operator("cmt.exporter_ot_automatchtextures",text="自动匹配贴图", icon="NODE_MATERIAL")
+
                 scriptCol = col.column()
                 scriptCol.prop(data,"MaterialKeywords")
                 batchModifyRow = scriptCol.row()

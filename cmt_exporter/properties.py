@@ -119,6 +119,10 @@ TEXTURE_CHANNEL_ITEMS = (
 # 把不透明图塞进去是错的。
 AUTO_FILL_ALPHA_SLOTS = ("opacity", "alpha", "cutout", "mask")
 
+# 槽位名和 BSDF 口名对不上的，先翻译再比。Principled BSDF 上没有 Opacity 口，
+# 管透明的是 Alpha 口，所以这几个槽位名都按 Alpha 找。
+SLOT_INPUT_ALIASES = {name: "Alpha" for name in AUTO_FILL_ALPHA_SLOTS}
+
 def _bsdf_node(material):
     if material is None or not material.use_nodes or material.node_tree is None:
         return None
@@ -156,43 +160,64 @@ def detect_texture_channel(material,image_name):
             return False
     return True
 
-class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
-    
-    def textureInstance_automatch_texture(self,context):
-        def find_target_input(node,target):
-            def find_to_rigth(node):
-                linkedNodes = []
-                for o in node.outputs:
-                    if o.is_linked:
-                        for link in o.links:
-                            linkedNodes.append(link.to_socket)
-                return linkedNodes
+def _bsdf_inputs_reached(socket, out=None, depth=0):
+    """收集某个输出口能走到的所有 Principled BSDF 输入口名。
 
-            while True:
-                nodes = find_to_rigth(node)
-                if len(nodes):
-                    if any(x.node.type == target for x in nodes):
-                        for x in nodes:
-                            if x.node.type== target:
-                                return x.name
-                    else:
-                        for x in  nodes:
-                            linkTarget = find_target_input(x.node,target)
-                            if linkTarget:
-                                return linkTarget
-                        break
-                else:
-                    break
-            return None 
-        for node in bpy.data.materials[self.matName].node_tree.nodes:
-            if node.type == "TEX_IMAGE":
-                target = find_target_input(node,"BSDF_PRINCIPLED")
-                
-                if not target: continue
-                if self.text == target.replace(" ",""):
-                        
-                    self.value = node.image.name
-                    break
+    会穷举全部连线而不是走第一条，因为同一个输出口可以同时接到
+    Base Color 和 Alpha（一张 RGBA 图当不透明图用的那种接法）。
+    """
+    if out is None:
+        out = set()
+    if depth > 8:
+        return out
+    for link in socket.links:
+        node = link.to_node
+        if node.type == "BSDF_PRINCIPLED":
+            out.add(link.to_socket.name)
+        else:
+            for next_out in node.outputs:
+                _bsdf_inputs_reached(next_out, out, depth + 1)
+    return out
+
+
+class CMT_Exporter_PG_Texture(bpy.types.PropertyGroup):
+
+    def textureInstance_automatch_texture(self,context):
+        """按节点连线填这张贴图的 value 与 Channel。
+
+        找出喂给目标 BSDF 输入口的那张图，再按它来自哪个输出口定通道：
+        Color 口接过去的算「整图」，Alpha 口接过去的算「Alpha 通道」。
+        """
+        material = bpy.data.materials.get(self.matName)
+        if material is None or material.node_tree is None:
+            return
+
+        # Opacity 这类槽位名在 BSDF 上没有同名口，先翻译成 Alpha 再比。
+        wanted = SLOT_INPUT_ALIASES.get(self.text.lower(), self.text).replace(" ", "")
+
+        matches = []
+        for node in material.node_tree.nodes:
+            if node.type != "TEX_IMAGE" or node.image is None:
+                continue
+            for out in node.outputs:
+                if not out.is_linked:
+                    continue
+                if wanted in {n.replace(" ", "") for n in _bsdf_inputs_reached(out)}:
+                    matches.append((node, out.name))
+        if not matches:
+            return
+
+        # 透明类槽位优先取 Alpha 口那条；其余取 Color 口那条。
+        # 一张 RGBA 图的 Color 口可能同时接 Base Color 和 Alpha，
+        # 不这么挑的话 Opacity 槽会被填成整张彩图。
+        if wanted == "Alpha":
+            chosen = next((m for m in matches if m[1] == "Alpha"), matches[0])
+        else:
+            chosen = next((m for m in matches if m[1] != "Alpha"), matches[0])
+
+        node, out_name = chosen
+        self.value = node.image.name
+        self.Channel = "Alpha" if out_name == "Alpha" else "BaseColor"
     def get_texture_items(self,context):
     
         items = []

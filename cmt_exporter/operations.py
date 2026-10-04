@@ -540,6 +540,35 @@ class CMT_Exporter_OT_RemoveArtdefRef(bpy.types.Operator):
         
         return {"FINISHED"}
     
+class CMT_Exporter_OT_AutoMatchTextures(bpy.types.Operator):
+    bl_idname = "cmt.exporter_ot_automatchtextures"
+    bl_label = "自动匹配贴图"
+    bl_description = "按材质节点连线，自动填充所有材质中尚未选择的贴图槽"
+
+    def execute(self, context: bpy.types.Context):
+        data = context.scene.CMT.ExporterSettings
+        matlist_refresh(data, context)
+
+        def empty_slots():
+            return [tex for mat in data.MaterialList for tex in mat.Textures
+                    if tex.value in ("", "None")]
+
+        before = len(empty_slots())
+        for mat in data.MaterialList:
+            if mat.FileName not in bpy.data.materials:
+                continue
+            for tex in mat.Textures:
+                if tex.value in ("", "None"):
+                    tex.textureInstance_automatch_texture(context)
+
+        matched = before - len(empty_slots())
+        if matched:
+            self.report({'INFO'}, f"已匹配 {matched} 张贴图")
+        else:
+            self.report({'WARNING'}, "未找到可匹配的贴图")
+        return {"FINISHED"}
+
+
 class CMT_Exporter_OT_ModifyMatTypeByKeywords(bpy.types.Operator):
     bl_idname = "cmt.exporter_ot_modifymattypebykeywords"
     bl_label = ""

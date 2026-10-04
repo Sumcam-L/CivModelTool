@@ -3,9 +3,9 @@ import bpy
 from collections import defaultdict
 import time
 import bmesh
-from collections import deque
 from mathutils import Vector
 
+from .partition import plan_parts, prune_vertex_groups
 from .utils import (
     clamp_dot_product,
     create_bone_for_vertex,
@@ -424,84 +424,39 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.object.mode_set(mode="OBJECT")
         settings = context.scene.CMT.S2BSettings
         obj = settings.TargetMesh
         max_bones = settings.MaxBones
 
-        mesh = obj.data
-        verts = mesh.vertices
-        polys = mesh.polygons
+        if obj is None or obj.type != "MESH":
+            self.report({"ERROR"}, "请选择目标网格")
+            return {"CANCELLED"}
 
-        # 1. 建邻接表
-        vertex_to_polys = {v.index: set() for v in verts}
-        for poly in polys:
-            for vi in poly.vertices:
-                vertex_to_polys[vi].add(poly.index)
+        parts = plan_parts(obj, max_bones)
+        if len(parts) < 2:
+            self.report({"INFO"}, "骨骼数量未超过上限，无需分割")
+            return {"CANCELLED"}
 
-        # 2️⃣ 建立面邻接表
-        poly_adjacency = {p.index: set() for p in polys}
+        # 先把上一次分离留下的同名临时组清掉。模型上如果还留着旧的
+        # AutoSeparatePartN（分离出来的碎片通常会带着一份），下面 get() 会
+        # 直接命中旧组，新旧顶点就混在同一组里，选择结果完全错乱。
+        for stale in [g for g in obj.vertex_groups
+                      if g.name.startswith("AutoSeparatePart")]:
+            obj.vertex_groups.remove(stale)
 
-        for poly in polys:
-            # 对当前面的每个顶点，找到与它相连的其他面
-            neighbor_polys = set()
-            for vi in poly.vertices:
-                neighbor_polys.update(vertex_to_polys[vi])
+        # 分离会打乱面索引，所以先把划分结果落到顶点组，之后靠顶点组选中
+        for index, (faces, _) in enumerate(parts):
+            group_name = "AutoSeparatePart" + str(index)
+            vg = obj.vertex_groups.new(name=group_name)
 
-            # 移除自身
-            neighbor_polys.discard(poly.index)
-            poly_adjacency[poly.index] = neighbor_polys
-
-        visited = set()
-        groups = []
-
-        # 2. 遍历所有顶点
-        for poly in polys:
-            if poly.index in visited:
-                continue
-
-            # BFS 找连通分量
-            queue = deque([poly.index])
-            region = []
-            bones = {}
-
-            while queue:
-                vi = queue.popleft()
-                if vi in visited:
-                    continue
-                if len(bones) >= max_bones:
-                    break
-
-                needBreak = False
-                # 顶点骨骼
-                for vid in polys[vi].vertices:
-                    v_bones = {
-                        obj.vertex_groups[g.group].name: 1
-                        for g in verts[vid].groups
-                        if obj.vertex_groups[g.group].name not in bones
-                    }
-                    if len(bones) + len(v_bones) > max_bones:
-                        needBreak = True
-                        break
-                    bones.update(v_bones)
-
-                if needBreak:
-                    break
-
-                visited.add(vi)
-                region.append(vi)
-
-                # 如果超过限制，停止扩展
-
-                # 扩展邻居
-                for nei in poly_adjacency[vi]:
-                    if nei not in visited:
-                        queue.append(nei)
-
-            groups.append((region, bones))
+            vertList = []
+            for pId in faces:
+                for v1 in obj.data.polygons[pId].vertices:
+                    vertList.append(v1)
+            vg.add(vertList, 1.0, "REPLACE")
 
         normals = {}
-        bpy.ops.object.mode_set(mode="OBJECT")  # 确保在对象模式
         bpy.ops.object.select_all(action="DESELECT")
 
         for polyIndex, poly in enumerate(obj.data.polygons):
@@ -516,28 +471,17 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                 loop = obj.data.loops[li]
                 normals[key].append(loop.normal.copy())
 
-
-        for index, part in enumerate(groups):
-            groupName = "AutoSeparatePart" + str(index)
-            vg = obj.vertex_groups.get(groupName)
-            if vg is None:
-                vg = obj.vertex_groups.new(name=groupName)
-
-            vertList = []
-            for pId in part[0]:
-                for v1 in polys[pId].vertices:
-                    vertList.append(v1)
-
-            vg.add(vertList, 1.0, "REPLACE")
-
-        index1 = 0
-        while index1 < len(groups):
+        # 最后一块留在原对象上，免得分离出一个没有面的空物体
+        for index1 in range(len(parts) - 1):
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.select_all(action="DESELECT")
-            obj.vertex_groups.active = obj.vertex_groups[
-                "AutoSeparatePart" + str(index1)
-            ]
+
+            group_name = "AutoSeparatePart" + str(index1)
+            vg = obj.vertex_groups.get(group_name)
+            if vg is None:
+                continue
+            obj.vertex_groups.active_index = vg.index
             bpy.ops.object.vertex_group_select()
 
             bm = bmesh.from_edit_mesh(obj.data)
@@ -547,14 +491,18 @@ class CMT_S2B_OT_AutoSeparateMesh(bpy.types.Operator):
                     face.select = False
             bmesh.update_edit_mesh(obj.data)
 
-            has_selected = any(f.select for f in bm.faces)
-
-            vg = obj.vertex_groups.get("AutoSeparatePart" + str(index1))
             obj.vertex_groups.remove(vg)
 
-            if has_selected:
+            if any(f.select for f in bm.faces):
+                before = set(bpy.context.scene.objects)
                 separateSelectedPart(normals)
+                for new_obj in [
+                    o for o in bpy.context.scene.objects if o not in before
+                ]:
+                    prune_vertex_groups(new_obj, parts[index1][1])
 
-            index1 += 1
+        prune_vertex_groups(obj, parts[len(parts) - 1][1])
+
+        bpy.context.view_layer.objects.active = obj
         return {"FINISHED"}
 

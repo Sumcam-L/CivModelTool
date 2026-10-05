@@ -18,7 +18,7 @@ from .enum_items import (
 )
 from .properties import CMT_Exporter_Settings, _report
 from .allowed_classes import get_allowed_geo_classes, get_allowed_anm_classes
-from .action_data import read_action_data
+from .action_data import read_action_data, to_native_arrays
 from .scene_helpers import get_parent_armature, getAbsPathByImage, get_real_project_path
 from .templates import get_bins_template, get_members_template, get_units_template
 from .textures import compress_texture_resolution, extract_alpha_to_file, extract_packed_textures_to_file
@@ -97,8 +97,16 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
             globalInfo = List[int]()
             globalInfo.Add(int(bpy.context.scene.render.fps / bpy.context.scene.render.fps_base))
             globalInfo.Add(frame_end - frame_start + 1)
-            animationData = read_action_data(anm.value.name)           
-            CN6FileOps.exportAnimation(animationData,str(Path(projpath , "Animations" , anm.value.name + ".fgx")),templatefile,globalInfo,anm.value.name,anm.Class,data.Compress)
+            animationData = to_native_arrays(read_action_data(anm.value.name))
+            if animationData is None:
+                continue
+            (slotNames, boneNames, boneFrameCounts, frameStart,
+             locations, rotations, scales) = animationData
+            CN6FileOps.exportAnimationFlat(
+                slotNames, boneNames, boneFrameCounts, frameStart,
+                locations, rotations, scales,
+                str(Path(projpath , "Animations" , anm.value.name + ".fgx")),
+                templatefile, globalInfo, anm.value.name, anm.Class, data.Compress)
 
         return
     def export_refs(self,context,data: CMT_Exporter_Settings):

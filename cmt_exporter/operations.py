@@ -2,6 +2,7 @@ import importlib.util
 import os
 import shutil
 import tempfile
+import time
 import xml.dom.minidom
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -131,9 +132,12 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
         template = str(templatefile)
 
         errors = []
+        timings = []
+        t_all = time.perf_counter()
         for start in range(0, len(items), batch_size):
             batch = items[start:start + batch_size]
             jobs = []
+            t_batch = time.perf_counter()
             for name, cls in batch:
                 action = bpy.data.actions.get(name)
                 if action is None:
@@ -144,26 +148,31 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                 globalInfo = List[int]()
                 globalInfo.Add(fps)
                 globalInfo.Add(frame_end - frame_start + 1)
+                t_read = time.perf_counter()
                 animationData = to_native_arrays(read_action_data(name))
+                read_s = time.perf_counter() - t_read
                 if animationData is None:
                     continue
                 (slotNames, boneNames, boneFrameCounts, frameStart,
                  locations, rotations, scales) = animationData
                 jobs.append((name, cls, globalInfo, slotNames, boneNames,
-                             boneFrameCounts, frameStart, locations, rotations, scales))
+                             boneFrameCounts, frameStart, locations, rotations, scales,
+                             read_s))
 
             def _write(job):
                 (name, cls, globalInfo, slotNames, boneNames, boneFrameCounts, frameStart,
-                 locations, rotations, scales) = job
+                 locations, rotations, scales, read_s) = job
+                t_write = time.perf_counter()
                 CN6FileOps.exportAnimationFlat(
                     slotNames, boneNames, boneFrameCounts, frameStart,
                     locations, rotations, scales,
                     str(anmdir / (name + ".fgx")),
                     template, globalInfo, name, cls, compress)
+                return read_s, time.perf_counter() - t_write
 
             if len(jobs) == 1:
                 try:
-                    _write(jobs[0])
+                    timings.append((jobs[0][0],) + _write(jobs[0]))
                 except Exception as e:
                     errors.append((jobs[0][0], e))
             elif jobs:
@@ -171,15 +180,36 @@ class CMT_Exporter_OT_Export(bpy.types.Operator):
                     futures = {pool.submit(_write, job): job[0] for job in jobs}
                     for future in as_completed(futures):
                         try:
-                            future.result()
+                            timings.append((futures[future],) + future.result())
                         except Exception as e:
                             errors.append((futures[future], e))
+
+            if len(batch) > 1:
+                self._log(f"动画批次 {start // batch_size + 1}: {len(jobs)} 个，"
+                          f"耗时 {time.perf_counter() - t_batch:.2f}s"
+                          f"（{workers} 线程并发）")
+
+        if timings:
+            self._report_animation_timings(timings, time.perf_counter() - t_all)
 
         for name, err in errors:
             self.report({"ERROR"}, f"动画 [{name}] 导出失败: {err}")
         if errors:
             raise RuntimeError(f"{len(errors)} 个动画导出失败")
         return
+
+    def _report_animation_timings(self, timings, total_s):
+        """把每个动画的读/写耗时汇总出来，便于判断该优化哪一侧。"""
+        read_sum = sum(t[1] for t in timings)
+        write_sum = sum(t[2] for t in timings)
+        slowest = max(timings, key=lambda t: t[2])
+        self._log(
+            f"动画导出耗时：{len(timings)} 个，总计 {total_s:.2f}s"
+            f"（读动作 {read_sum:.2f}s，C# 落盘 {write_sum:.2f}s 累计）")
+        for name, read_s, write_s in sorted(timings, key=lambda t: -t[2])[:5]:
+            self._log(f"    {name}: 读 {read_s:.3f}s / 写 {write_s:.3f}s")
+        if len(timings) > 5:
+            self._log(f"    （最慢的是 {slowest[0]}，其余 {len(timings) - 5} 个已省略）")
     def export_refs(self,context,data: CMT_Exporter_Settings):
         astList = data.AstList
         projpath = get_real_project_path(self,context)
